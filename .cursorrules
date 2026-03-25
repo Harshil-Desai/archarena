@@ -1,0 +1,200 @@
+# SysDraw — Cursor Rules
+# System design interview practice SaaS
+# Stack: Next.js 14 (App Router) · TypeScript · Tailwind · tldraw · Socket.io · Zustand · Anthropic SDK · Prisma · PostgreSQL · Redis
+
+# ============================================================
+# PROJECT CONTEXT — READ FIRST
+# ============================================================
+# This is a SaaS product where users practice system design
+# interviews on a collaborative whiteboard. The AI interviewer
+# has full context of the drawing (as a semantic graph — NOT
+# raw tldraw JSON), the chat history, and the active prompt.
+#
+# Key architectural decisions already made:
+# - tldraw canvas → parsed into SemanticGraph (nodes + edges)
+#   before ANYTHING is sent to AI. Never send raw tldraw JSON.
+# - Two AI models: claude-haiku for hints (fast, cheap),
+#   claude-sonnet for final scoring (strong, thorough).
+# - Free tier: ephemeral, IndexedDB is source of truth on client.
+#   Redis (TTL 2h) on server. No Postgres for free users.
+# - Pro/Premium tier: Postgres for metadata, R2/S3 for JSON blobs.
+# - Socket.io for persistent connection. Client debounces 1.5s
+#   and diffs the graph before emitting — never send unchanged state.
+# - Zustand for all session state. No prop drilling.
+# - Vendor-specific tldraw custom shapes with ShapeMeta.
+#   Each shape carries: vendor, category, label, isLabeled.
+# - Unlabeled arrows → red border + exclamation badge. Never block the user.
+# - No auth in Week 1-2. Everything is hardcoded free tier limits.
+
+# ============================================================
+# TYPESCRIPT
+# ============================================================
+- Always use strict TypeScript. No `any` unless absolutely unavoidable —
+  if you must use `any`, add a comment explaining why.
+- Prefer `interface` for object shapes, `type` for unions and aliases.
+- All shared types live in `src/types/index.ts`. Never define
+  one-off types inline in components — add them to types first.
+- Use `as const` for static lookup objects (e.g. VENDOR_CATALOGUE).
+- Never use non-null assertion (`!`) without a comment. Prefer
+  explicit null checks or optional chaining.
+- Avoid enums — use string union types or `as const` objects instead.
+
+# ============================================================
+# NEXT.JS APP ROUTER
+# ============================================================
+- Every component that uses hooks, browser APIs, or event handlers
+  must have `"use client"` at the top. Default to server components
+  for everything else.
+- API routes live in `src/app/api/`. Each route exports only
+  `GET`, `POST`, `PUT`, `DELETE` — named exactly like that.
+- Never put business logic directly in route handlers. Extract to
+  `src/lib/` functions and call them from the route.
+- Always return typed responses. Use `NextResponse.json()` for
+  JSON, `new Response()` for streams.
+- Streaming responses (scoring endpoint): use `ReadableStream`
+  with `TextEncoder`. Never buffer the full AI response.
+- Environment variables: server-only vars (API keys) have no
+  `NEXT_PUBLIC_` prefix. Client vars must have it. Never mix these.
+
+# ============================================================
+# AI / ANTHROPIC SDK
+# ============================================================
+- NEVER send raw tldraw records to the AI. Always pass through
+  `parseCanvasToGraph()` first and send the `SemanticGraph`.
+- Two models, two purposes — do not swap them:
+    Hints / chat  → claude-haiku-4-5-20251001  (max_tokens: 150)
+    Final scoring → claude-sonnet-4-6          (max_tokens: 800)
+- Scoring prompt must instruct the model to respond ONLY in valid
+  JSON matching the `ScoreResult` type. Parse defensively.
+- Hint prompt: one question or observation, max 2 sentences.
+  The prompt must explicitly say "don't reveal the full answer."
+- Always check free tier limits BEFORE making any AI API call.
+  Return `{ error: "free_limit_reached" }` with status 403 if exceeded.
+- Keep prompt builders in `src/lib/ai.ts`. Never write prompt
+  strings inside components or route handlers.
+
+# ============================================================
+# TLDRAW & CANVAS
+# ============================================================
+- Never import from `@tldraw/editor` directly — use `@tldraw/tldraw`.
+- Custom shapes live in `src/components/canvas/shapes/`.
+  Each shape file exports a `ShapeUtil` subclass + a type alias.
+  All custom shapes are registered in `shapes/index.ts`.
+- Every custom shape MUST read `props.meta.isLabeled` and render
+  a red border + exclamation badge when false. This is not optional.
+- The default tldraw toolbar is hidden. `VendorToolbar` is the
+  only way users add shapes. Do not re-enable the default toolbar.
+- `CanvasWatcher` is the only place that reads from `editor.store`.
+  It debounces 1500ms and calls `hasGraphChanged()` before propagating.
+  Never bypass this — direct store reads elsewhere cause performance issues.
+- `parseCanvasToGraph()` in `src/lib/graph-parser.ts` is the single
+  source of truth for canvas → AI translation. If you need canvas
+  data anywhere, use this function.
+
+# ============================================================
+# STATE MANAGEMENT (ZUSTAND)
+# ============================================================
+- All session state lives in `src/store/session.ts`. One store, one file.
+- Never use React Context for session state — that's Zustand's job.
+- Hints and chat messages are separate concepts:
+    `hints[]`    → background AI observations, shown on demand
+    `messages[]` → explicit user ↔ AI conversation
+  Never mix them into the same array.
+- `updateLastMessage()` is for streaming — it patches the last item
+  in the messages array in place. Use it only for streaming responses.
+- Usage counters (`hintsUsed`, `scoresUsed`) must be incremented
+  BEFORE the API call, not after. This prevents double-firing on retries.
+
+# ============================================================
+# SOCKET.IO
+# ============================================================
+- All socket logic goes through `src/lib/socket-client.ts`.
+  Never import `socket.io-client` directly in components.
+- The socket connects lazily on `joinSession()` call.
+  Do not auto-connect on app load.
+- Client emits: `canvas:update`, `session:join`
+  Server emits: `hint:new`
+  Do not add new event names without updating this list here.
+- Free tier: socket is used for hint delivery only.
+  Pro tier (Week 3+): also used for collaborative session sync.
+
+# ============================================================
+# INDEXEDDB (FREE TIER PERSISTENCE)
+# ============================================================
+- All IndexedDB operations go through `src/lib/indexeddb.ts`.
+  Never call `indexedDB` directly in components.
+- Save on every canvas change (debounced with canvas watcher).
+- For free tier users, IndexedDB is the source of truth.
+  If the session is not found in Redis, the client recovers from IndexedDB.
+- Keys: `session:{id}` → `{ graph, notes, savedAt }`
+
+# ============================================================
+# COMPONENTS
+# ============================================================
+- Component folders mirror the domain:
+    canvas/     → tldraw + shapes + toolbar + validation
+    chat/       → AI chat panel, messages, input
+    score/      → score display, breakdown, missed concepts
+    notes/      → markdown notes textarea
+    prompt/     → selector on homepage, badge in session
+    session/    → timer, layout, export button
+    ui/         → shared primitives (Button, Badge, Modal)
+- One component per file. File name = component name (PascalCase).
+- No barrel `index.ts` re-exports in component folders —
+  import directly from the file to keep traces readable.
+- Keep components dumb where possible. Business logic belongs in
+  `lib/` or the Zustand store, not inside JSX.
+- Session layout: canvas is `flex-[3]`, right panel is `flex-[2]`.
+  Right panel splits vertically: notes top, chat bottom. Do not
+  change these proportions without discussing it first.
+
+# ============================================================
+# STYLING
+# ============================================================
+- Tailwind only. No inline styles, no CSS modules, no styled-components.
+- Dark theme throughout. Background: `gray-950`. Panels: `gray-900`.
+  Borders: `gray-800`. Never use white backgrounds in the session page.
+- Validation state colors:
+    Unlabeled shape/arrow → `border-red-500`, badge `bg-red-500`
+    Labeled              → `border-blue-400` (database), `border-green-400` (cache), etc.
+- Free tier limit nudge: amber banner (`bg-amber-900/30 border-amber-600`).
+  Upgrade CTA is placeholder text for now — no links until Week 3.
+- Use `group` and `group-hover` for toolbar submenus. No JS-driven hover state.
+
+# ============================================================
+# FILE NAMING
+# ============================================================
+- Components: PascalCase (`InterviewCanvas.tsx`)
+- Lib / utils: kebab-case (`graph-parser.ts`, `socket-client.ts`)
+- Store: camelCase (`session.ts`)
+- Types: camelCase (`index.ts`)
+- API routes: always `route.ts` inside a descriptively named folder
+
+# ============================================================
+# ERROR HANDLING
+# ============================================================
+- All `fetch()` calls must check `res.ok` before reading the body.
+- AI API errors must surface a user-friendly message in the chat panel —
+  never silently fail or log to console only.
+- Free limit errors (403 `free_limit_reached`) must show the upgrade
+  nudge UI, not a generic error message.
+- IndexedDB operations: always wrap in try/catch. Failure is non-fatal —
+  log a warning but don't block the session.
+- Never let a failed hint request interrupt the drawing flow.
+  Hints are best-effort, not blocking.
+
+# ============================================================
+# WHAT NOT TO DO
+# ============================================================
+- Do NOT add authentication logic yet (that's Week 3).
+- Do NOT add Prisma or database calls yet (that's Week 3).
+- Do NOT use `localStorage` for session state — use IndexedDB
+  (larger storage limit, non-blocking, structured).
+- Do NOT send the full tldraw store to any API endpoint.
+- Do NOT stream hints — they are short, return them as plain JSON.
+- Do NOT add new npm packages without flagging it. The current
+  dependencies are intentional and sufficient for Week 1-2.
+- Do NOT add collaborative multi-user canvas (Week 3+ scope).
+- Do NOT build mobile layouts — desktop only for now.
+- Do NOT use `console.log` in committed code. Use `console.warn`
+  for recoverable issues, `console.error` for real failures only.
