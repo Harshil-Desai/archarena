@@ -5,7 +5,7 @@ import { VENDOR_CATALOGUE } from "../shapes";
 export function VendorToolbar() {
   const editor = useEditor();
 
-  const addShape = (category: string, vendor: string) => {
+  const addShape = (category: keyof typeof VENDOR_CATALOGUE, vendor: string) => {
     editor.createShape({
       type: category,
       x: 200,
@@ -22,7 +22,11 @@ export function VendorToolbar() {
     <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10
                     flex flex-col gap-2 bg-gray-900 rounded-xl p-2 
                     border border-gray-700">
-      {Object.entries(VENDOR_CATALOGUE).map(([category, vendors]) => (
+      {(
+        Object.entries(VENDOR_CATALOGUE) as Array<
+          [keyof typeof VENDOR_CATALOGUE, readonly string[]]
+        >
+      ).map(([category, vendors]) => (
         <div key={category} className="group relative">
           {/* Category icon button */}
           <button className="w-10 h-10 rounded-lg bg-gray-800 
