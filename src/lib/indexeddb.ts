@@ -1,4 +1,4 @@
-const DB_NAME = "sysdraw";
+const DB_NAME = "ArchArena";
 const STORE = "sessions";
 
 async function getDB(): Promise<IDBDatabase> {

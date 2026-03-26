@@ -1,3 +1,5 @@
+import { LIMITS } from "./limits";
+
 export interface DesignPrompt {
     id: string;
     title: string;
@@ -44,3 +46,5 @@ export interface DesignPrompt {
     },
     // prompts to be added later
   ];
+
+  export const FREE_PROMPT_COUNT = LIMITS.free.promptCount;

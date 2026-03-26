@@ -9,11 +9,12 @@ import { SemanticGraph } from "@/types";
 
 interface Props {
   onGraphChange: (graph: SemanticGraph) => void;
+  onCanvasRecordsChange?: (records: TLRecord[]) => void;
 }
 
 const DEBOUNCE_MS = 1500;
 
-function CanvasWatcher({ onGraphChange }: Props) {
+function CanvasWatcher({ onGraphChange, onCanvasRecordsChange }: Props) {
   const editor = useEditor();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const lastGraphRef = useRef<SemanticGraph | null>(null);
@@ -28,10 +29,13 @@ function CanvasWatcher({ onGraphChange }: Props) {
       // Client-side diff — only propagate if something changed
       if (hasGraphChanged(lastGraphRef.current, graph)) {
         lastGraphRef.current = graph;
+        // Pass latest canvas records along with the semantic graph update.
+        // This is used for hint triggering.
+        onCanvasRecordsChange?.(records);
         onGraphChange(graph);
       }
     }, DEBOUNCE_MS);
-  }, [editor, onGraphChange]);
+  }, [editor, onGraphChange, onCanvasRecordsChange]);
 
   useEffect(() => {
     const unsub = editor.store.listen(handleChange, { scope: "document" });
@@ -44,7 +48,7 @@ function CanvasWatcher({ onGraphChange }: Props) {
   return null;
 }
 
-export function InterviewCanvas({ onGraphChange }: Props) {
+export function InterviewCanvas({ onGraphChange, onCanvasRecordsChange }: Props) {
   return (
     <div className="w-full h-full relative">
       <Tldraw
@@ -52,7 +56,10 @@ export function InterviewCanvas({ onGraphChange }: Props) {
         components={{ Toolbar: () => null }} // hide default toolbar
       >
         <VendorToolbar />
-        <CanvasWatcher onGraphChange={onGraphChange} />
+        <CanvasWatcher
+          onGraphChange={onGraphChange}
+          onCanvasRecordsChange={onCanvasRecordsChange}
+        />
       </Tldraw>
     </div>
   );
