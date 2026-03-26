@@ -1,5 +1,5 @@
 # ============================================================
-# SysDraw — .cursorignore
+# archarena — .cursorignore
 # Tells Cursor what NOT to index or include in AI context.
 # Keep this lean — over-ignoring breaks autocomplete and
 # cross-file understanding.
