@@ -34,6 +34,12 @@ declare module "@tldraw/tlschema" {
       w: number;
       h: number;
     };
+    generic: {
+      meta: ShapeMeta;
+      geo?: string | undefined;
+      w: number;
+      h: number;
+    };
   }
 }
 

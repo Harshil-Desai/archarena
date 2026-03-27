@@ -1,6 +1,7 @@
  "use client";
 
-import { useRef, useState } from "react";
+import { use, useRef, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import type { TLRecord } from "@tldraw/tldraw";
 import type { SemanticGraph, ScoreResult } from "@/types";
 import { LIMITS } from "@/lib/limits";
@@ -14,11 +15,20 @@ import { ScorePanel } from "@/components/score/ScorePanel";
 export default function SessionPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  void params;
-
+  const { id } = use(params);
+  const router = useRouter();
   const activePrompt = useSessionStore((s) => s.activePrompt);
+
+  useEffect(() => {
+    if (!activePrompt) {
+      router.push("/");
+    }
+  }, [activePrompt, router]);
+
+  if (!activePrompt) return null;
+
   const notes = useSessionStore((s) => s.notes);
   const history = useSessionStore((s) => s.messages);
   const scoresUsed = useSessionStore((s) => s.scoresUsed);
@@ -26,6 +36,7 @@ export default function SessionPage({
   const setScoring = useSessionStore((s) => s.setScoring);
   const setScoreResult = useSessionStore((s) => s.setScoreResult);
   const isScoring = useSessionStore((s) => s.isScoring);
+  const llmProvider = useSessionStore((s) => s.llmProvider);
 
   const latestGraphRef = useRef<SemanticGraph | null>(null);
   const [canvasRecords, setCanvasRecords] = useState<TLRecord[]>([]);
@@ -59,6 +70,7 @@ export default function SessionPage({
           notes,
           history,
           scoresUsed: used,
+          llmProvider,
         }),
       });
 

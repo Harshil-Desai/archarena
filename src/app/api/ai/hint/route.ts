@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-import { buildHintPrompt, MODEL_MAP } from "@/lib/ai";
+import { generateAnthropicHint, generateGeminiHint } from "@/lib/ai";
 import { LIMITS } from "@/lib/limits";
-
-const client = new Anthropic();
+import type { LlmProvider } from "@/types";
 
 export async function POST(req: NextRequest) {
-  const { prompt, graph, notes, hintsUsed } = await req.json();
+  const { prompt, graph, notes, hintsUsed, llmProvider = "anthropic" } = await req.json();
 
   if (hintsUsed >= LIMITS.free.aiHintsPerSession) {
     return NextResponse.json({ error: "free_limit_reached" }, { status: 403 });
   }
 
-  const message = await client.messages.create({
-    model: MODEL_MAP.haiku,
-    max_tokens: 150,
-    messages: [{ role: "user", content: buildHintPrompt(prompt, graph, notes) }],
-  });
+  const provider: LlmProvider = llmProvider;
+  let hint: string;
 
-  const hint = (message.content[0] as any).text;
+  if (provider === "gemini") {
+    hint = await generateGeminiHint(prompt, graph, notes);
+  } else {
+    hint = await generateAnthropicHint(prompt, graph, notes);
+  }
+
   return NextResponse.json({ hint });
 }

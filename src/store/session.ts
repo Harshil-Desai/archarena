@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { DesignPrompt } from "@/lib/prompts";
-import { ChatMessage, Hint, ScoreResult, SemanticGraph } from "@/types";
+import { ChatMessage, Hint, LlmProvider, ScoreResult, SemanticGraph } from "@/types";
 import { TLRecord } from "@tldraw/tldraw";
 
 interface SessionState {
@@ -40,6 +40,10 @@ interface SessionState {
   isRunning: boolean;
   startTimer: () => void;
   tickTimer: () => void;
+
+  // LLM provider toggle
+  llmProvider: LlmProvider;
+  setLlmProvider: (provider: LlmProvider) => void;
 
   // Usage counters (free tier enforcement)
   hintsUsed: number;
@@ -88,6 +92,9 @@ export const useSessionStore = create<SessionState>((set) => ({
   isRunning: false,
   startTimer: () => set({ isRunning: true }),
   tickTimer: () => set((s) => ({ secondsElapsed: s.secondsElapsed + 1 })),
+
+  llmProvider: "anthropic",
+  setLlmProvider: (provider) => set({ llmProvider: provider }),
 
   hintsUsed: 0,
   scoresUsed: 0,

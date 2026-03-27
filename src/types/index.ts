@@ -13,7 +13,8 @@ export interface ShapeMeta {
     | "server"
     | "client"
     | "cdn"
-    | "storage";
+    | "storage"
+    | "generic";
   
   // The semantic graph sent to AI — NOT raw tldraw JSON
   export interface SemanticNode {
@@ -39,6 +40,7 @@ export interface ShapeMeta {
   
   // AI interactions
   export type AIModel = "haiku" | "sonnet";  // haiku=hints, sonnet=scoring
+  export type LlmProvider = "anthropic" | "gemini";
   
   export interface Hint {
     id: string;

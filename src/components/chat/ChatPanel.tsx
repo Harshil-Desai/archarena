@@ -25,6 +25,7 @@ export function ChatPanel({ canvasRecords }: { canvasRecords: TLRecord[] }) {
   const markHintRead = useSessionStore((s) => s.markHintRead);
   const incrementHints = useSessionStore((s) => s.incrementHints);
   const setAiThinking = useSessionStore((s) => s.setAiThinking);
+  const llmProvider = useSessionStore((s) => s.llmProvider);
 
   const [error, setError] = useState<string | null>(null);
 
@@ -58,6 +59,7 @@ export function ChatPanel({ canvasRecords }: { canvasRecords: TLRecord[] }) {
             graph,
             notes,
             hintsUsed,
+            llmProvider,
           }),
         });
 

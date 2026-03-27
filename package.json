@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
+    "@google/generative-ai": "^0.24.1",
     "@tldraw/editor": "^4.5.3",
     "@tldraw/tldraw": "^4.5.3",
     "ai": "^6.0.138",

@@ -3,9 +3,31 @@ import { Rectangle2d } from "@tldraw/editor";
 import type { Geometry2d, TLGeometryOpts, TLShapeUtilCanBindOpts } from "@tldraw/editor";
 import { useState, useRef, useEffect, useCallback } from "react";
 
-export type CDNShapeType = TLShape<"cdn">;
+export type GenericShapeType = TLShape<"generic">;
 
-function LabelEditor({ shape }: { shape: CDNShapeType }) {
+// ─── SVG shape outlines for each geo variant ─────────────────────
+function GeoOutline({ geo, w, h }: { geo: string | undefined; w: number; h: number }) {
+  const cls = "stroke-current fill-none stroke-[1.5]";
+  switch (geo) {
+    case "ellipse":
+      return (
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full absolute inset-0 text-gray-500 opacity-30">
+          <ellipse cx={w / 2} cy={h / 2} rx={w / 2 - 2} ry={h / 2 - 2} className={cls} />
+        </svg>
+      );
+    case "diamond":
+      return (
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full absolute inset-0 text-gray-500 opacity-30">
+          <path d={`M${w / 2} 2 L${w - 2} ${h / 2} L${w / 2} ${h - 2} L2 ${h / 2}Z`} className={cls} />
+        </svg>
+      );
+    default: // rectangle — the border-radius on the container is enough
+      return null;
+  }
+}
+
+// ─── Inline label editor ─────────────────────────────────────────
+function LabelEditor({ shape }: { shape: GenericShapeType }) {
   const editor = useEditor();
   const editingId = useValue("editingId", () => editor.getEditingShapeId(), [editor]);
   const isEditing = editingId === shape.id;
@@ -26,7 +48,7 @@ function LabelEditor({ shape }: { shape: CDNShapeType }) {
       type: shape.type,
       props: {
         ...shape.props,
-        meta: { ...shape.props.meta, label: trimmed, isLabeled: true },
+        meta: { ...shape.props.meta, label: trimmed, isLabeled: trimmed.length > 0 },
       },
     });
     editor.setCurrentTool("select");
@@ -47,7 +69,7 @@ function LabelEditor({ shape }: { shape: CDNShapeType }) {
       }}
       onPointerDown={(e) => e.stopPropagation()}
       className="absolute inset-0 w-full h-full bg-transparent text-white
-                 text-xs text-center border-2 border-yellow-400 rounded-lg
+                 text-xs text-center border-2 border-gray-400 rounded-lg
                  outline-none z-10"
       placeholder="Type label..."
       style={{ caretColor: "white" }}
@@ -55,20 +77,27 @@ function LabelEditor({ shape }: { shape: CDNShapeType }) {
   );
 }
 
-export class CDNShapeUtil extends ShapeUtil<CDNShapeType> {
-  static override type = "cdn" as const;
+export class GenericShapeUtil extends ShapeUtil<GenericShapeType> {
+  static override type = "generic" as const;
 
-  getDefaultProps(): CDNShapeType["props"] {
+  getDefaultProps(): GenericShapeType["props"] {
     return {
-      w: 120,
-      h: 80,
-      meta: { vendor: "cloudfront", category: "cdn", label: "", isLabeled: true },
+      w: 140,
+      h: 70,
+      geo: "rectangle",  // ✅ move here
+      meta: {
+        vendor: "generic",
+        category: "generic",
+        label: "",
+        isLabeled: false,
+      },
     };
   }
 
-  getGeometry(shape: CDNShapeType, _opts?: TLGeometryOpts): Geometry2d {
+  getGeometry(shape: GenericShapeType, _opts?: TLGeometryOpts): Geometry2d {
     return new Rectangle2d({
-      x: 0, y: 0,
+      x: 0,
+      y: 0,
       width: shape.props.w,
       height: shape.props.h,
       isFilled: true,
@@ -78,25 +107,30 @@ export class CDNShapeUtil extends ShapeUtil<CDNShapeType> {
   override canBind(_opts: TLShapeUtilCanBindOpts): boolean { return true; }
   override canEdit(): boolean { return true; }
 
-  component(shape: CDNShapeType) {
-    const { meta } = shape.props;
+  component(shape: GenericShapeType) {
+    const { meta, w, h, geo } = shape.props;
     const isUnlabeled = !meta.isLabeled;
+    // const geo = meta.geo || "rectangle";
 
     return (
       <HTMLContainer>
         <div
           className={`
             relative flex flex-col items-center justify-center
-            w-full h-full rounded-lg border-2 bg-blue-950
-            ${isUnlabeled ? "border-red-500" : "border-yellow-400"}
+            w-full h-full rounded-lg border-2 bg-gray-900/80
+            ${isUnlabeled ? "border-red-500" : "border-gray-500"}
           `}
         >
-          <img src={`/icons/vendors/${meta.vendor}.svg`} className="w-8 h-8" alt="" />
-          <span className="text-xs text-white mt-1">{meta.label || meta.vendor}</span>
+          <GeoOutline geo={geo} w={w} h={h} />
 
+          <span className="text-xs text-gray-300 z-[1]">
+            {meta.label || geo}
+          </span>
+
+          {/* Validation badge */}
           {isUnlabeled && (
             <div
-              className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 
+              className="absolute -top-2 -right-2 w-5 h-5 bg-red-500
                          rounded-full flex items-center justify-center cursor-help"
               title="Add a label to this component for accurate AI review"
             >
@@ -110,7 +144,7 @@ export class CDNShapeUtil extends ShapeUtil<CDNShapeType> {
     );
   }
 
-  indicator(shape: CDNShapeType) {
+  indicator(shape: GenericShapeType) {
     return <rect width={shape.props.w} height={shape.props.h} rx={8} />;
   }
 }

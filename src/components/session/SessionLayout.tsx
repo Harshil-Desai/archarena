@@ -1,8 +1,46 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { useSessionStore } from "@/store/session";
+import type { LlmProvider } from "@/types";
 import { PromptBadge } from "../prompt/PromptBadge";
 import { SessionTimer } from "./SessionTimer";
+
+const PROVIDERS: { key: LlmProvider; label: string }[] = [
+  { key: "anthropic", label: "Anthropic" },
+  { key: "gemini", label: "Gemini" },
+];
+
+function LlmProviderToggle() {
+  const llmProvider = useSessionStore((s) => s.llmProvider);
+  const setLlmProvider = useSessionStore((s) => s.setLlmProvider);
+
+  return (
+    <div
+      className="flex rounded-lg border border-gray-700 overflow-hidden"
+      role="radiogroup"
+      aria-label="LLM provider"
+    >
+      {PROVIDERS.map(({ key, label }) => (
+        <button
+          key={key}
+          type="button"
+          role="radio"
+          aria-checked={llmProvider === key}
+          onClick={() => setLlmProvider(key)}
+          className={[
+            "px-3 py-1.5 text-xs font-medium transition-colors",
+            llmProvider === key
+              ? "bg-gray-700 text-gray-100"
+              : "bg-gray-900 text-gray-400 hover:text-gray-200 hover:bg-gray-800",
+          ].join(" ")}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function SessionLayout({
   left,
@@ -38,7 +76,8 @@ export function SessionLayout({
             <SessionTimer />
           </div>
 
-          <div className="justify-self-end">
+          <div className="justify-self-end flex items-center gap-3">
+            <LlmProviderToggle />
             <button
               type="button"
               onClick={onScoreClick}
