@@ -69,6 +69,7 @@ function BreakdownBar({
 
 export function ScorePanel() {
   const scoreResult = useSessionStore((s) => s.scoreResult);
+  const setScoreResult = useSessionStore((s) => s.setScoreResult);
   const isScoring = useSessionStore((s) => s.isScoring);
   const scoresUsed = useSessionStore((s) => s.scoresUsed);
 
@@ -102,8 +103,42 @@ export function ScorePanel() {
   }
 
   if (scoreResult) {
+    if (scoreResult.score === -1) {
+      return (
+        <section className="bg-gray-950">
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 h-full">
+            <div className="flex flex-col items-center justify-center h-full p-6 text-center">
+              <div className="text-2xl mb-3">⚠️</div>
+              <p className="text-red-400 text-sm font-medium">
+                {scoreResult.isQuotaError 
+                  ? 'AI quota exceeded' 
+                  : 'Scoring failed'}
+              </p>
+              <p className="text-gray-400 text-xs mt-2">
+                {scoreResult.error}
+              </p>
+              {scoreResult.isQuotaError && (
+                <p className="text-gray-500 text-xs mt-3">
+                  Try switching to Anthropic in the model toggle,
+                  or wait ~60 seconds for Gemini quota to reset.
+                </p>
+              )}
+              <button
+                onClick={() => setScoreResult(null)}
+                className="mt-4 text-xs text-blue-400 hover:text-blue-300 underline"
+              >
+                Dismiss and try again
+              </button>
+            </div>
+          </div>
+        </section>
+      );
+    }
+
+    if (!scoreResult.breakdown) return null;
+
     const tone = scoreTone(scoreResult.score);
-    const b: ScoreResult["breakdown"] = scoreResult.breakdown;
+    const b = scoreResult.breakdown;
 
     return (
       <section className="bg-gray-950">
@@ -173,7 +208,7 @@ export function ScorePanel() {
               Missed concepts
             </p>
             <div className="flex flex-wrap gap-2">
-              {scoreResult.missedConcepts.map((c, i) => (
+              {(scoreResult.missedConcepts || []).map((c, i) => (
                 <span
                   key={`${c}-${i}`}
                   className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-900/20 border border-amber-700/50 text-amber-200"
@@ -224,4 +259,3 @@ export function ScorePanel() {
     </section>
   );
 }
-

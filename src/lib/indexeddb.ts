@@ -31,3 +31,13 @@ export async function loadSessionLocally(id: string) {
     req.onerror = () => reject(req.error);
   });
 }
+
+export async function clearSessionLocally(id: string) {
+  const db = await getDB();
+  return new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE, "readwrite");
+    const req = tx.objectStore(STORE).delete(id);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}

@@ -44,22 +44,26 @@ function LlmProviderToggle() {
 
 export function SessionLayout({
   left,
-  notes,
   chat,
+  notes,
   onScoreClick,
+  onClearSession,
   isScorePanelOpen,
   onCloseScorePanel,
   scorePanel,
   scoreButtonDisabled,
+  scoreButtonTooltip,
 }: {
   left: ReactNode;
-  notes: ReactNode;
   chat: ReactNode;
+  notes: ReactNode;
   onScoreClick: () => void;
+  onClearSession: () => void;
   isScorePanelOpen: boolean;
   onCloseScorePanel: () => void;
   scorePanel: ReactNode;
   scoreButtonDisabled?: boolean;
+  scoreButtonTooltip?: string;
 }) {
   return (
     <div className="h-screen bg-gray-950 overflow-hidden flex flex-col">
@@ -76,12 +80,20 @@ export function SessionLayout({
             <SessionTimer />
           </div>
 
-          <div className="justify-self-end flex items-center gap-3">
+          <div className="justify-self-end flex items-center gap-4">
+            <button
+              type="button"
+              onClick={onClearSession}
+              className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+            >
+              Clear
+            </button>
             <LlmProviderToggle />
             <button
               type="button"
               onClick={onScoreClick}
               disabled={scoreButtonDisabled}
+              title={scoreButtonDisabled ? scoreButtonTooltip : undefined}
               className={[
                 "rounded-lg px-3 py-2 text-sm font-medium border transition-colors",
                 "bg-gray-800 border-gray-700 text-gray-100 hover:bg-gray-700",
@@ -101,7 +113,9 @@ export function SessionLayout({
           <div className="flex-1 overflow-hidden border-b border-gray-800">
             {notes}
           </div>
-          <div className="flex-1 overflow-hidden">{chat}</div>
+          <div className="flex-1 overflow-hidden">
+            {chat}
+          </div>
         </div>
       </main>
 
@@ -133,4 +147,3 @@ export function SessionLayout({
     </div>
   );
 }
-

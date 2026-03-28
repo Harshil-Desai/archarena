@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { DesignPrompt } from "@/lib/prompts";
 import { ChatMessage, Hint, LlmProvider, ScoreResult, SemanticGraph } from "@/types";
-import { TLRecord } from "@tldraw/tldraw";
 
 interface SessionState {
   // Prompt
@@ -33,7 +32,7 @@ interface SessionState {
   scoreResult: ScoreResult | null;
   isScoring: boolean;
   setScoring: (v: boolean) => void;
-  setScoreResult: (r: ScoreResult) => void;
+  setScoreResult: (r: ScoreResult | null) => void;
 
   // Timer
   secondsElapsed: number;
