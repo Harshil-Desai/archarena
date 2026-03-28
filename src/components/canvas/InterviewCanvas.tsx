@@ -1,5 +1,5 @@
 "use client";
-import { Tldraw, useEditor, TLRecord } from "@tldraw/tldraw";
+import { Tldraw, useEditor, TLRecord, useValue } from "@tldraw/tldraw";
 import "@tldraw/tldraw/tldraw.css";
 import { useEffect, useRef, useCallback } from "react";
 import { CUSTOM_SHAPE_UTILS } from "./shapes";
@@ -23,7 +23,7 @@ const TLDRAW_COMPONENT_OVERRIDES = {
   Toolbar: null,
   MainMenu: null,
   PageMenu: null,
-  NavigationPanel: null,
+  NavigationPanel: ZoomControls,
   ContextMenu: null,
   StylePanel: null,
   ActionsMenu: null,
@@ -32,6 +32,48 @@ const TLDRAW_COMPONENT_OVERRIDES = {
   HelpMenu: null,
   // Keep: KeyboardShortcutsDialog (tldraw default)
 } as const;
+
+function ZoomControls() {
+  const editor = useEditor();
+  const zoom = useValue("zoom", () => editor.getZoomLevel(), [editor]);
+
+  return (
+    <div
+      className="absolute bottom-3 right-3 z-10 
+                    flex items-center gap-1 
+                    bg-gray-900 border border-gray-700 
+                    rounded-lg px-2 py-1 shadow-lg shadow-black/20"
+    >
+      <button
+        onClick={() => editor.zoomOut()}
+        className="text-gray-400 hover:text-white w-6 h-6 
+                   flex items-center justify-center text-lg font-medium"
+        title="Zoom out"
+      >
+        −
+      </button>
+      <span className="text-gray-400 text-[11px] w-10 text-center tabular-nums font-mono">
+        {Math.round(zoom * 100)}%
+      </span>
+      <button
+        onClick={() => editor.zoomIn()}
+        className="text-gray-400 hover:text-white w-6 h-6 
+                   flex items-center justify-center text-lg font-medium"
+        title="Zoom in"
+      >
+        +
+      </button>
+      <button
+        onClick={() => editor.zoomToFit()}
+        className="text-gray-400 hover:text-white text-[10px] px-2 
+                   border-l border-gray-700 ml-1 h-4 flex items-center"
+        title="Fit to screen"
+      >
+        FIT
+      </button>
+    </div>
+  );
+}
 
 function CanvasWatcher({ onGraphChange, onCanvasRecordsChange }: Props) {
   const editor = useEditor();

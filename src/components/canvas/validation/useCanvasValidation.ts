@@ -16,19 +16,10 @@ export function useCanvasValidation(
     }
   }
 
-  const trulyUnlabeled = graph.nodes.filter((node) => {
-    if (node.category === 'generic') {
-      // Generic shapes MUST have a user-provided label
-      return !node.label || node.label.trim() === ''
-    }
-    // Vendor shapes: empty label is fine (vendor name is sufficient)
-    return false
-  })
-
-  if (trulyUnlabeled.length > 0) {
+  if (graph.unlabeledGenericCount > 0) {
     return {
       canRequestHint: false,
-      reason: `Label all components before asking for a hint (${trulyUnlabeled.length} unlabeled)`,
+      reason: `Label all components before asking for a hint (${graph.unlabeledGenericCount} unlabeled shape${graph.unlabeledGenericCount > 1 ? 's' : ''})`,
     }
   }
 

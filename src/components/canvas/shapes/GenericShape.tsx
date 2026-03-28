@@ -21,6 +21,15 @@ function GeoOutline({ geo, w, h }: { geo: string | undefined; w: number; h: numb
           <path d={`M${w / 2} 2 L${w - 2} ${h / 2} L${w / 2} ${h - 2} L2 ${h / 2}Z`} className={cls} />
         </svg>
       );
+    case "cylinder":
+      return (
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full absolute inset-0 text-gray-500 opacity-30">
+          <ellipse cx={w / 2} cy={12} rx={w / 2 - 2} ry={10} className={cls} />
+          <line x1={2} y1={12} x2={2} y2={h - 10} className={cls} />
+          <line x1={w - 2} y1={12} x2={w - 2} y2={h - 10} className={cls} />
+          <ellipse cx={w / 2} cy={h - 10} rx={w / 2 - 2} ry={10} className={cls} />
+        </svg>
+      );
     default: // rectangle — the border-radius on the container is enough
       return null;
   }

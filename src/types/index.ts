@@ -14,7 +14,8 @@ export type ShapeCategory =
   | "client"
   | "cdn"
   | "storage"
-  | "generic";
+  | "generic"
+  | "annotation"; // Standalone text nodes
 
 // The semantic graph sent to AI — NOT raw tldraw JSON
 export interface SemanticNode {
@@ -22,6 +23,15 @@ export interface SemanticNode {
   vendor: string;
   category: ShapeCategory;
   label: string;
+  description?: string; // from text shapes near this node
+  isGeneric?: boolean;  // true for basic rectangle/circle/etc shapes
+}
+
+export interface Annotation {
+  id: string;
+  text: string;
+  // Future: we could add x,y position to associate with
+  // nearby shapes, but for now just collect the text content
 }
 
 export interface SemanticEdge {
@@ -34,7 +44,9 @@ export interface SemanticEdge {
 export interface SemanticGraph {
   nodes: SemanticNode[];
   edges: SemanticEdge[];
+  annotations: Annotation[];     // standalone text shapes
   unlabeledEdgeCount: number;
+  unlabeledGenericCount: number; // generic shapes without labels
   isValid: boolean;        // false if any arrows are unlabeled
 }
 

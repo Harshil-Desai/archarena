@@ -650,12 +650,7 @@ export default function Home() {
           <Feature
             icon={<ScoreIcon />}
             label="Scored out of 100"
-            text="Breakdown by scalability, reliability, tradeoffs, and completeness."
-          />
-          <Feature
-            icon={<BoltIcon />}
-            label="No account required"
-            text="Start in 10 seconds. Free tier, no credit card."
+            text="Breakdown by scalability, reliability, and tradeoffs."
           />
         </div>
       </section>
@@ -665,7 +660,7 @@ export default function Home() {
         <span className="font-[family-name:var(--font-display)]">
           ArchArena &copy; 2025
         </span>
-        <span>Built with Next.js + Claude API</span>
+        <span>Built with ❤️ by Harshil</span>
       </footer>
     </div>
   );

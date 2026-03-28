@@ -133,7 +133,7 @@ function ToolButton({ icon, tooltip, isActive, disabled, onClick }: ToolButtonPr
 
 // ─── Basic Shape Helpers ─────────────────────────────────────────
 
-type GeoType = "rectangle" | "ellipse" | "diamond";
+type GeoType = "rectangle" | "ellipse" | "diamond" | "cylinder";
 
 interface BasicShapeConfig {
   icon: React.ReactNode;
@@ -154,9 +154,9 @@ const BASIC_SHAPES: BasicShapeConfig[] = [
   {
     icon: <CylinderIcon />,
     tooltip: "Generic database / storage",
-    geo: "ellipse",
-    w: 100,
-    h: 80,
+    geo: "cylinder",
+    w: 80,
+    h: 100,
   },
   {
     icon: <CircleIcon />,
@@ -284,6 +284,19 @@ export function VendorToolbar() {
                      shadow-md shadow-black/20"
         >
           Click a shape edge to start · Double-click arrow to label it
+        </div>
+      )}
+
+      {/* Text helper text */}
+      {currentToolId === "text" && (
+        <div
+          className="absolute left-full ml-2 top-24 z-20
+                     bg-gray-900 border border-gray-700 rounded-md 
+                     px-2.5 py-1.5 text-[10px] text-gray-400 
+                     leading-relaxed whitespace-nowrap
+                     shadow-md shadow-black/20"
+        >
+          Click anywhere on canvas to add text · These annotations are included in AI context
         </div>
       )}
 

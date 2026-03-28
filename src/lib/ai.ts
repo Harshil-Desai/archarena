@@ -32,25 +32,79 @@ export const MODEL_MAP: Record<AIModel, string> = {
 
 export const GEMINI_MODEL_MAP = {
   flash: "gemini-2.5-flash",   // background hints, chat
-  pro: "gemini-2.5-flash",       // final scoring
+  pro: "gemini-2.5-pro",       // final scoring
 } as const;
 
 // ── Prompt builders (model-agnostic) ───────────────────────────────
 
 export function formatGraphForPrompt(graph: SemanticGraph): string {
-  const nodeList = graph.nodes
-    .map((n) => `- ${n.label} (${n.vendor}, ${n.category})`)
-    .join('\n')
-  const edgeList = graph.edges.length > 0
-    ? graph.edges
-      .map((e) => {
-        const from = graph.nodes.find((n) => n.id === e.from)?.label ?? 'unknown'
-        const to = graph.nodes.find((n) => n.id === e.to)?.label ?? 'unknown'
-        return `- ${from} → ${to}${e.label ? `: "${e.label}"` : ' (flow unlabeled)'}`
-      })
-      .join('\n')
-    : 'No connections drawn yet.'
-  return `Components:\n${nodeList || 'None'}\n\nData flows:\n${edgeList}`
+  const allNodes = graph.nodes;
+
+  if (allNodes.length === 0) {
+    return "The canvas is empty — no components have been drawn yet.";
+  }
+
+  // Separate vendor and generic nodes for clarity
+  const vendorNodes = allNodes.filter((n) => !n.isGeneric);
+  const genericNodes = allNodes.filter((n) => n.isGeneric);
+
+  const lines: string[] = [];
+
+  if (vendorNodes.length > 0) {
+    lines.push("Named technology components:");
+    vendorNodes.forEach((n) => {
+      lines.push(`  - ${n.label} (${n.vendor}, ${n.category})`);
+    });
+  }
+
+  if (genericNodes.length > 0) {
+    lines.push("Generic/unlabeled components:");
+    genericNodes.forEach((n) => {
+      const labelNote = ["rectangle", "ellipse", "diamond", "component"].includes(n.label)
+        ? `${n.label} — no label assigned yet`
+        : n.label;
+      lines.push(`  - ${labelNote}`);
+    });
+  }
+
+  if (graph.edges.length > 0) {
+    lines.push("\nData flows between components:");
+    graph.edges.forEach((e) => {
+      const fromNode = allNodes.find((n) => n.id === e.from);
+      const toNode = allNodes.find((n) => n.id === e.to);
+      const fromLabel = fromNode?.label ?? "unknown";
+      const toLabel = toNode?.label ?? "unknown";
+      const flowLabel = e.label
+        ? `"${e.label}"`
+        : "(flow direction shown but not labeled)";
+      lines.push(`  - ${fromLabel} → ${toLabel}: ${flowLabel}`);
+    });
+  } else {
+    lines.push("\nNo connections drawn yet — components are isolated.");
+  }
+
+  if (graph.annotations.length > 0) {
+    lines.push("\nCandidate annotations / notes on canvas:");
+    graph.annotations.forEach((a) => {
+      lines.push(`  - "${a.text}"`);
+    });
+  }
+
+  if (graph.unlabeledEdgeCount > 0) {
+    lines.push(
+      `\nWarning: ${graph.unlabeledEdgeCount} connection(s) have no label — ` +
+      `data flow direction or purpose is unclear.`
+    );
+  }
+
+  if (graph.unlabeledGenericCount > 0) {
+    lines.push(
+      `Note: ${graph.unlabeledGenericCount} generic shape(s) have no label — ` +
+      `their role in the architecture is ambiguous.`
+    );
+  }
+
+  return lines.join("\n");
 }
 
 // PROMPT 1 — background hint (fast model)
@@ -64,24 +118,25 @@ export function buildHintPrompt(
     .map((m) => `- ${m.content}`)
     .join('\n')
 
+  const canvasContext = formatGraphForPrompt(graph);
+
   return `You are a senior staff engineer at a top-tier tech company
 conducting a system design interview. You are watching the candidate
 build their architecture diagram in real time.
 
-The Question
+## The Question
 "${prompt.title}" — ${prompt.description}
 
-Their Current Architecture
-${formatGraphForPrompt(graph)}
-${graph.unlabeledEdgeCount > 0 ? `\nNote: ${graph.unlabeledEdgeCount} connection(s) have no label — data flow direction is unclear.` : ""}
+## Current Architecture
+${canvasContext}
 
-Scoring Criteria (what a full solution should address)
+## Scoring Criteria (what a full solution should address)
 ${prompt.scoringCriteria.map((c, i) => `${i + 1}. ${c}`).join('\n')}
 
-Hints Already Given (do NOT repeat these)
+## Hints Already Given (do NOT repeat these)
 ${previousHints || 'None yet — this is the first hint.'}
 
-Your Task
+## Your Task
 Give the candidate ONE meaningful hint.
 A good hint for this context:
 - Is specific to what you actually see on THEIR canvas right now
@@ -89,6 +144,7 @@ A good hint for this context:
 - Asks a pointed question OR makes a specific observation
 - Does NOT give away the solution — nudge, don't answer
 - References specific components by the name the candidate gave them
+- If the candidate has generic unlabeled shapes (rectangles or circles without meaningful labels), note that these represent unclear components — mention that naming them would help clarify the architecture, but still give a substantive hint about what you CAN see.
 
 If the canvas is sparse (fewer than 3 components), ask them to clarify the scale requirements and core user flows first before diving into implementation details.
 
@@ -109,17 +165,20 @@ export function buildScoringPrompt(
   graph: SemanticGraph,
   history: ChatMessage[]
 ): string {
+  const canvasContext = formatGraphForPrompt(graph);
+
   return `You are a senior staff engineer scoring a system design interview.
 
-Question: "${prompt.title}" — ${prompt.description}
+## Question
+"${prompt.title}" — ${prompt.description}
 
-Scoring criteria:
+## Scoring Criteria
 ${prompt.scoringCriteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
-Final architecture submitted:
-${formatGraphForPrompt(graph)}
+## Submitted Architecture
+${canvasContext}
 
-  Respond with ONLY a raw JSON object. 
+Respond with ONLY a raw JSON object. 
 No markdown. No code fences. No backticks. No explanation. 
 The very first character of your response must be '{' and 
 the very last must be '}'.
