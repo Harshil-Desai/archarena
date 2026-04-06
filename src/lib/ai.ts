@@ -32,7 +32,7 @@ export const MODEL_MAP: Record<AIModel, string> = {
 
 export const GEMINI_MODEL_MAP = {
   flash: "gemini-2.5-flash",   // background hints, chat
-  pro: "gemini-2.5-pro",       // final scoring
+  pro: "gemini-2.5-flash",       // final scoring
 } as const;
 
 // ── Prompt builders (model-agnostic) ───────────────────────────────

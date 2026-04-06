@@ -37,7 +37,7 @@ export default function SessionPage({
   const setScoreResult = useSessionStore((s) => s.setScoreResult);
   const isScoring = useSessionStore((s) => s.isScoring);
   const llmProvider = useSessionStore((s) => s.llmProvider);
-  
+
   // Restored notes state
   const notes = useSessionStore((s) => s.notes);
   const setNotes = useSessionStore((s) => s.setNotes);
@@ -73,11 +73,11 @@ export default function SessionPage({
   const onGraphChange = useCallback((g: SemanticGraph) => {
     latestGraphRef.current = g;
     setCurrentGraph(g);
-    
+
     // Fire-and-forget save
-    saveSessionLocally(id, { 
-      graph: g, 
-      notes: useSessionStore.getState().notes 
+    saveSessionLocally(id, {
+      graph: g,
+      notes: useSessionStore.getState().notes
     }).catch(err => console.warn("Save failed", err));
   }, [id]);
 
@@ -85,11 +85,11 @@ export default function SessionPage({
   const notesSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
     if (notesSaveTimeoutRef.current) clearTimeout(notesSaveTimeoutRef.current);
-    
+
     notesSaveTimeoutRef.current = setTimeout(() => {
-      saveSessionLocally(id, { 
-        graph: latestGraphRef.current, 
-        notes: notes 
+      saveSessionLocally(id, {
+        graph: latestGraphRef.current,
+        notes: notes
       }).catch(err => console.warn("Notes save failed", err));
     }, 1000);
 
@@ -189,9 +189,9 @@ export default function SessionPage({
 
   const handleClearSession = async () => {
     if (!confirm("Clear your drawing and notes? This cannot be undone.")) return;
-    
+
     await clearSessionLocally(id);
-    
+
     // Reset state
     setNotes("");
     setScoreResult(null);
@@ -199,7 +199,7 @@ export default function SessionPage({
     // Note: tldraw canvas needs a manual reset usually, 
     // but clearing the session locally means on refresh it's gone.
     // For immediate UI reset, we'd need to talk to tldraw editor instance.
-    window.location.reload(); 
+    window.location.reload();
   };
 
   if (!activePrompt) return null;
