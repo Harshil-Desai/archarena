@@ -44,6 +44,14 @@ export default function SessionPage({
   const [showToast, setShowToast] = useState(false);
   const [showResumeToast, setShowResumeToast] = useState(false);
   const [sessionError, setSessionError] = useState(false);
+  const autosaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, []);
 
   // 1. Redirect if not authenticated
   useEffect(() => {
@@ -111,24 +119,29 @@ export default function SessionPage({
   }, [authStatus, activePrompt, router, syncFromServer]);
 
   // Handle graph changes & Auto-save
-  const onGraphChange = useCallback(async (g: SemanticGraph) => {
+  const onGraphChange = useCallback((g: SemanticGraph) => {
     latestGraphRef.current = g;
     setCurrentGraph(g);
 
-    // Primary: save to DB
-    if (sessionId) {
-      try {
-        await fetch(`/api/session/${sessionId}/canvas`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ canvasState: g }),
-        });
-      } catch (err) {
-        console.warn("[canvas] DB save failed, falling back to IndexedDB");
-        // Fallback: IndexedDB
-        saveSessionLocally(urlSessionId, { graph: g, notes: useSessionStore.getState().notes });
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+
+    autosaveTimerRef.current = setTimeout(async () => {
+      // Primary: save to DB
+      if (sessionId) {
+        try {
+          const res = await fetch(`/api/session/${sessionId}/canvas`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ canvasState: g }),
+          });
+          if (!res.ok) throw new Error("Server save failed");
+        } catch (err) {
+          console.warn("[canvas] DB save failed, falling back to IndexedDB");
+          // Fallback: IndexedDB
+          saveSessionLocally(urlSessionId, { graph: g, notes: useSessionStore.getState().notes });
+        }
       }
-    }
+    }, 3000);
   }, [sessionId, urlSessionId]);
 
   // Debounced notes save
@@ -251,6 +264,19 @@ export default function SessionPage({
     window.location.reload();
   };
 
+  if (authStatus === "loading") {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-5 h-5 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
+          <p className="text-gray-500 text-sm">Loading session...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === "unauthenticated") return null;
+
   if (sessionError) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -269,12 +295,12 @@ export default function SessionPage({
     );
   }
 
-  if (authStatus === "loading" || !sessionId) {
+  if (!sessionId) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="w-5 h-5 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
-          <p className="text-gray-500 text-sm">Loading session...</p>
+          <p className="text-gray-500 text-sm">Initializing session...</p>
         </div>
       </div>
     );

@@ -80,7 +80,7 @@ export function ChatPanel({ graph }: ChatPanelProps) {
       const aiMessage = {
         id: nanoid(),
         role: "ai" as const,
-        content: data.hint,
+        content: data.hint.trim(),
         timestamp: Date.now(),
         model: data.model, // return this from the API
       };
@@ -128,8 +128,8 @@ export function ChatPanel({ graph }: ChatPanelProps) {
             className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
           >
             {m.role === "ai" ? (
-              <div className="max-w-[90%]">
-                <div className="bg-gray-800 rounded-lg p-3 text-sm text-gray-100 leading-relaxed">
+              <div className="max-w-[90%] overflow-hidden">
+                <div className="bg-gray-800 rounded-lg p-3 text-sm text-gray-100 leading-relaxed break-words">
                   {m.content}
                 </div>
                 <div className="mt-1.5 flex items-center gap-2 px-1">
@@ -144,8 +144,8 @@ export function ChatPanel({ graph }: ChatPanelProps) {
                 </div>
               </div>
             ) : (
-              <div className="max-w-[85%]">
-                <div className="bg-blue-600 rounded-lg p-3 text-sm text-white leading-relaxed">
+              <div className="max-w-[85%] overflow-hidden">
+                <div className="bg-blue-600 rounded-lg p-3 text-sm text-white leading-relaxed break-words">
                   {m.content}
                 </div>
                 <div className="mt-1.5 px-1 text-right">

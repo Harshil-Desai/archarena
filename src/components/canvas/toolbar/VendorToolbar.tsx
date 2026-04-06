@@ -119,6 +119,7 @@ function ToolButton({ icon, tooltip, isActive, disabled, onClick }: ToolButtonPr
       onClick={onClick}
       disabled={disabled}
       title={tooltip}
+      aria-label={tooltip}
       className={`
         w-9 h-9 rounded-lg flex items-center justify-center
         transition-colors duration-100
@@ -325,6 +326,7 @@ export function VendorToolbar() {
         <div key={category} className="group relative">
           <button
             title={category.charAt(0).toUpperCase() + category.slice(1)}
+            aria-label={category.charAt(0).toUpperCase() + category.slice(1)}
             className="w-9 h-9 rounded-lg bg-transparent text-gray-400
                        hover:bg-gray-800 hover:text-white
                        flex items-center justify-center cursor-pointer
