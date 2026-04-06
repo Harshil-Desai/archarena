@@ -15,7 +15,15 @@ export type ShapeCategory =
   | "cdn"
   | "storage"
   | "generic"
-  | "annotation"; // Standalone text nodes
+  | "annotation" // Standalone text nodes
+  | "apiGateway"
+  | "objectStorage"
+  | "graphDb"
+  | "loadBalancer"
+  | "webServer"
+  | "appServer"
+  | "relationalDb"
+  | "noSqlDb";
 
 // The semantic graph sent to AI — NOT raw tldraw JSON
 export interface SemanticNode {

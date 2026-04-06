@@ -58,12 +58,12 @@ function Navbar() {
       </Link>
 
       <div className="flex items-center gap-6">
-        <a
-          href="#pricing"
+        <Link
+          href="/pricing"
           className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
         >
           Pricing
-        </a>
+        </Link>
         <a
           href="#faq"
           className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
@@ -438,9 +438,11 @@ function PromptCard({
   return (
     <button
       type="button"
-      disabled={!isUnlocked}
       onClick={() => {
-        if (!isUnlocked) return;
+        if (!isUnlocked) {
+          router.push("/pricing");
+          return;
+        }
         if (!session) {
           router.push("/login?from=/");
           return;
@@ -449,16 +451,14 @@ function PromptCard({
         router.push(`/session/${nanoid(8)}`);
       }}
       className={[
-        "group relative text-left p-6 rounded-2xl border transition-all duration-500",
+        "group relative text-left p-6 rounded-2xl border transition-all duration-500 font-sans",
         "bg-gray-950/40 border-gray-800/60 backdrop-blur-md",
         "min-h-[220px] flex flex-col justify-between",
-        isUnlocked
-          ? "hover:border-blue-500/50 hover:bg-gray-900/60 cursor-pointer hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/10"
-          : "opacity-40 cursor-not-allowed",
+        "hover:border-blue-500/50 hover:bg-gray-900/60 cursor-pointer hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-blue-900/10",
+        !isUnlocked && "opacity-80 active:scale-95",
         visible ? "animate-fade-in" : "opacity-0",
       ].join(" ")}
       style={visible ? { animationDelay: `${index * 80}ms` } : undefined}
-      aria-disabled={!isUnlocked}
       title={!isUnlocked ? "Available on Pro plan" : undefined}
     >
       {/* Top Section */}

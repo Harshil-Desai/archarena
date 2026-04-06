@@ -34,6 +34,46 @@ declare module "@tldraw/tlschema" {
       w: number;
       h: number;
     };
+    apiGateway: {
+      meta: ShapeMeta;
+      w: number;
+      h: number;
+    };
+    objectStorage: {
+      meta: ShapeMeta;
+      w: number;
+      h: number;
+    };
+    graphDb: {
+      meta: ShapeMeta;
+      w: number;
+      h: number;
+    };
+    loadBalancer: {
+      meta: ShapeMeta;
+      w: number;
+      h: number;
+    };
+    webServer: {
+      meta: ShapeMeta;
+      w: number;
+      h: number;
+    };
+    appServer: {
+      meta: ShapeMeta;
+      w: number;
+      h: number;
+    };
+    relationalDb: {
+      meta: ShapeMeta;
+      w: number;
+      h: number;
+    };
+    noSqlDb: {
+      meta: ShapeMeta;
+      w: number;
+      h: number;
+    };
     generic: {
       meta: ShapeMeta;
       geo?: string | undefined;

@@ -12,6 +12,10 @@ function LabelEditor({ shape }: { shape: ServerShapeType }) {
   const [text, setText] = useState(shape.props.meta.label || "");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const textRef = useRef(text);
+  useEffect(() => { textRef.current = text; }, [text]);
+
+
   useEffect(() => {
     if (isEditing) {
       setText(shape.props.meta.label || "");
@@ -19,8 +23,10 @@ function LabelEditor({ shape }: { shape: ServerShapeType }) {
     }
   }, [isEditing, shape.props.meta.label]);
 
-  const commitLabel = useCallback(() => {
-    const trimmed = text.trim();
+  const commitLabel = useCallback((forcedText?: string) => {
+    const finalStr = typeof forcedText === 'string' ? forcedText : text;
+    const trimmed = finalStr.trim();
+    if (trimmed === shape.props.meta.label) return;
     editor.updateShape({
       id: shape.id,
       type: shape.type,
@@ -29,8 +35,15 @@ function LabelEditor({ shape }: { shape: ServerShapeType }) {
         meta: { ...shape.props.meta, label: trimmed, isLabeled: true },
       },
     });
-    editor.setCurrentTool("select");
+    if (editor.getEditingShapeId() === shape.id) { editor.setCurrentTool("select"); }
   }, [editor, shape, text]);
+
+  const commitRef = useRef(commitLabel);
+  useEffect(() => { commitRef.current = commitLabel; }, [commitLabel]);
+
+  useEffect(() => {
+    return () => { commitRef.current?.(textRef.current); };
+  }, []);
 
   if (!isEditing) return null;
 
@@ -39,14 +52,14 @@ function LabelEditor({ shape }: { shape: ServerShapeType }) {
       ref={inputRef}
       value={text}
       onChange={(e) => setText(e.target.value)}
-      onBlur={commitLabel}
+      onBlur={() => commitLabel()}
       onKeyDown={(e) => {
         if (e.key === "Enter") { e.preventDefault(); commitLabel(); }
         if (e.key === "Escape") editor.setCurrentTool("select");
         e.stopPropagation();
       }}
       onPointerDown={(e) => e.stopPropagation()}
-      className="absolute inset-0 w-full h-full bg-transparent text-white
+      className="absolute inset-0 w-full h-full bg-transparent text-white pt-10
                  text-xs text-center border-2 border-orange-400 rounded-lg
                  outline-none z-10"
       placeholder="Type label..."
@@ -87,8 +100,8 @@ export class ServerShapeUtil extends ShapeUtil<ServerShapeType> {
         <div
           className={`
             relative flex flex-col items-center justify-center
-            w-full h-full rounded-lg border-2 bg-blue-950
-            ${isUnlabeled ? "border-red-500" : "border-orange-400"}
+            w-full h-full rounded-lg border-2 bg-gray-950 focus-within:[&>span]:opacity-0
+            ${isUnlabeled ? "border-red-500 stroke-red-500 text-red-500" : "border-orange-400 text-orange-400"}
           `}
         >
           <img src={`/icons/vendors/${meta.vendor}.svg`} className="w-8 h-8" alt="" />
@@ -100,7 +113,10 @@ export class ServerShapeUtil extends ShapeUtil<ServerShapeType> {
                          rounded-full flex items-center justify-center cursor-help"
               title="Add a label to this component for accurate AI review"
             >
-              <span className="text-white text-xs font-bold">!</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="6" x2="12" y2="14" />
+                <line x1="12" y1="18" x2="12.01" y2="18" />
+              </svg>
             </div>
           )}
 

@@ -5,25 +5,24 @@ import { useState, useRef, useEffect, useCallback } from "react";
 
 export type GenericShapeType = TLShape<"generic">;
 
-// ─── SVG shape outlines for each geo variant ─────────────────────
-function GeoOutline({ geo, w, h }: { geo: string | undefined; w: number; h: number }) {
-  const cls = "stroke-current fill-none stroke-[1.5]";
+function GeoOutline({ geo, w, h, isUnlabeled }: { geo: string | undefined; w: number; h: number; isUnlabeled: boolean }) {
+  const cls = `stroke-[2] ${isUnlabeled ? 'stroke-red-500 fill-red-500/10' : 'stroke-gray-500 fill-gray-900/80'}`;
   switch (geo) {
     case "ellipse":
       return (
-        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full absolute inset-0 text-gray-500 opacity-30">
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full absolute inset-0 z-0">
           <ellipse cx={w / 2} cy={h / 2} rx={w / 2 - 2} ry={h / 2 - 2} className={cls} />
         </svg>
       );
     case "diamond":
       return (
-        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full absolute inset-0 text-gray-500 opacity-30">
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full absolute inset-0 z-0">
           <path d={`M${w / 2} 2 L${w - 2} ${h / 2} L${w / 2} ${h - 2} L2 ${h / 2}Z`} className={cls} />
         </svg>
       );
     case "cylinder":
       return (
-        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full absolute inset-0 text-gray-500 opacity-30">
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full absolute inset-0 z-0">
           <ellipse cx={w / 2} cy={12} rx={w / 2 - 2} ry={10} className={cls} />
           <line x1={2} y1={12} x2={2} y2={h - 10} className={cls} />
           <line x1={w - 2} y1={12} x2={w - 2} y2={h - 10} className={cls} />
@@ -43,6 +42,10 @@ function LabelEditor({ shape }: { shape: GenericShapeType }) {
   const [text, setText] = useState(shape.props.meta.label || "");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const textRef = useRef(text);
+  useEffect(() => { textRef.current = text; }, [text]);
+
+
   useEffect(() => {
     if (isEditing) {
       setText(shape.props.meta.label || "");
@@ -50,18 +53,27 @@ function LabelEditor({ shape }: { shape: GenericShapeType }) {
     }
   }, [isEditing, shape.props.meta.label]);
 
-  const commitLabel = useCallback(() => {
-    const trimmed = text.trim();
+  const commitLabel = useCallback((forcedText?: string) => {
+    const finalStr = typeof forcedText === 'string' ? forcedText : text;
+    const trimmed = finalStr.trim();
+    if (trimmed === shape.props.meta.label) return;
     editor.updateShape({
       id: shape.id,
       type: shape.type,
       props: {
         ...shape.props,
-        meta: { ...shape.props.meta, label: trimmed, isLabeled: trimmed.length > 0 },
+        meta: { ...shape.props.meta, label: trimmed, isLabeled: trimmed !== "" },
       },
     });
-    editor.setCurrentTool("select");
+    if (editor.getEditingShapeId() === shape.id) { editor.setCurrentTool("select"); }
   }, [editor, shape, text]);
+
+  const commitRef = useRef(commitLabel);
+  useEffect(() => { commitRef.current = commitLabel; }, [commitLabel]);
+
+  useEffect(() => {
+    return () => { commitRef.current?.(textRef.current); };
+  }, []);
 
   if (!isEditing) return null;
 
@@ -70,14 +82,14 @@ function LabelEditor({ shape }: { shape: GenericShapeType }) {
       ref={inputRef}
       value={text}
       onChange={(e) => setText(e.target.value)}
-      onBlur={commitLabel}
+      onBlur={() => commitLabel()}
       onKeyDown={(e) => {
         if (e.key === "Enter") { e.preventDefault(); commitLabel(); }
         if (e.key === "Escape") editor.setCurrentTool("select");
         e.stopPropagation();
       }}
       onPointerDown={(e) => e.stopPropagation()}
-      className="absolute inset-0 w-full h-full bg-transparent text-white
+      className="absolute inset-0 w-full h-full bg-gray-900/90 text-white
                  text-xs text-center border-2 border-gray-400 rounded-lg
                  outline-none z-10"
       placeholder="Type label..."
@@ -126,14 +138,14 @@ export class GenericShapeUtil extends ShapeUtil<GenericShapeType> {
         <div
           className={`
             relative flex flex-col items-center justify-center
-            w-full h-full rounded-lg border-2 bg-gray-900/80
-            ${isUnlabeled ? "border-red-500" : "border-gray-500"}
+            w-full h-full focus-within:[&>span.static-label]:opacity-0
+            ${!geo || geo === 'rectangle' ? "rounded-lg border-2 bg-gray-900/80 " + (isUnlabeled ? "border-red-500" : "border-gray-500") : ""}
           `}
         >
-          <GeoOutline geo={geo} w={w} h={h} />
+          <GeoOutline geo={geo} w={w} h={h} isUnlabeled={isUnlabeled} />
 
-          <span className="text-xs text-gray-300 z-[1]">
-            {meta.label || geo}
+          <span className="text-xs text-gray-300 z-[1] static-label pointer-events-none px-2 text-center break-words">
+            {meta.label}
           </span>
 
           {/* Validation badge */}
@@ -143,7 +155,10 @@ export class GenericShapeUtil extends ShapeUtil<GenericShapeType> {
                          rounded-full flex items-center justify-center cursor-help"
               title="Add a label to this component for accurate AI review"
             >
-              <span className="text-white text-xs font-bold">!</span>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="6" x2="12" y2="14" />
+                <line x1="12" y1="18" x2="12.01" y2="18" />
+              </svg>
             </div>
           )}
 
