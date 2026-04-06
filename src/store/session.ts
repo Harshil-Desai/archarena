@@ -11,6 +11,19 @@ interface SessionState {
   notes: string;
   setNotes: (n: string) => void;
 
+  // Session tracking
+  sessionId: string | null;
+  setSessionId: (id: string) => void;
+
+  syncFromServer: (data: {
+    sessionId: string;
+    hintsUsed: number;
+    scoresUsed: number;
+    canvasState: SemanticGraph | null;
+    chatHistory: ChatMessage[];
+    scoreResult: ScoreResult | null;
+  }) => void;
+
   // Canvas delta tracking
   lastSentGraph: SemanticGraph | null;
   setLastSentGraph: (g: SemanticGraph) => void;
@@ -47,8 +60,8 @@ interface SessionState {
   // Usage counters (free tier enforcement)
   hintsUsed: number;
   scoresUsed: number;
-  incrementHints: () => void;
-  incrementScores: () => void;
+  syncHintsFromServer: (hintsUsed: number) => void;
+  syncScoresFromServer: (scoresUsed: number) => void;
 }
 
 export const useSessionStore = create<SessionState>((set) => ({
@@ -57,6 +70,17 @@ export const useSessionStore = create<SessionState>((set) => ({
 
   notes: "",
   setNotes: (n) => set({ notes: n }),
+
+  sessionId: null,
+  setSessionId: (id) => set({ sessionId: id }),
+
+  syncFromServer: (data) => set({
+    sessionId: data.sessionId,
+    hintsUsed: data.hintsUsed,
+    scoresUsed: data.scoresUsed,
+    scoreResult: data.scoreResult,
+    messages: data.chatHistory ?? [],
+  }),
 
   lastSentGraph: null,
   setLastSentGraph: (g) => set({ lastSentGraph: g }),
@@ -97,6 +121,6 @@ export const useSessionStore = create<SessionState>((set) => ({
 
   hintsUsed: 0,
   scoresUsed: 0,
-  incrementHints: () => set((s) => ({ hintsUsed: s.hintsUsed + 1 })),
-  incrementScores: () => set((s) => ({ scoresUsed: s.scoresUsed + 1 })),
+  syncHintsFromServer: (hintsUsed) => set({ hintsUsed }),
+  syncScoresFromServer: (scoresUsed) => set({ scoresUsed }),
 }));

@@ -2,6 +2,7 @@
 
 import { use, useRef, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 import type { SemanticGraph, ScoreResult } from "@/types";
 import { LIMITS } from "@/lib/limits";
@@ -20,66 +21,115 @@ export default function SessionPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
+  const { id: urlSessionId } = use(params);
   const router = useRouter();
-  const activePrompt = useSessionStore((s) => s.activePrompt);
-
-  useEffect(() => {
-    if (!activePrompt) {
-      router.push("/");
-    }
-  }, [activePrompt, router]);
-
+  const { data: authSession, status: authStatus } = useSession();
+  const { syncFromServer, activePrompt, sessionId } = useSessionStore();
+  
   const history = useSessionStore((s) => s.messages);
   const scoresUsed = useSessionStore((s) => s.scoresUsed);
-  const incrementScores = useSessionStore((s) => s.incrementScores);
   const setScoring = useSessionStore((s) => s.setScoring);
   const setScoreResult = useSessionStore((s) => s.setScoreResult);
   const isScoring = useSessionStore((s) => s.isScoring);
   const llmProvider = useSessionStore((s) => s.llmProvider);
+  const syncScoresFromServer = useSessionStore((s) => s.syncScoresFromServer);
 
   // Restored notes state
   const notes = useSessionStore((s) => s.notes);
   const setNotes = useSessionStore((s) => s.setNotes);
 
   const latestGraphRef = useRef<SemanticGraph | null>(null);
+  const savedCanvasRef = useRef<SemanticGraph | null>(null);
   const [currentGraph, setCurrentGraph] = useState<SemanticGraph | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const [showResumeToast, setShowResumeToast] = useState(false);
+  const [sessionError, setSessionError] = useState(false);
 
-  // Restore session from IndexedDB on mount
+  // 1. Redirect if not authenticated
   useEffect(() => {
-    async function restore() {
-      try {
-        const result = await loadSessionLocally(id);
-        if (result) {
-          if (result.graph) {
-            setCurrentGraph(result.graph);
-            latestGraphRef.current = result.graph;
-          }
-          if (result.notes) {
-            setNotes(result.notes);
-          }
-          setShowToast(true);
-          setTimeout(() => setShowToast(false), 3000);
-        }
-      } catch (err) {
-        console.warn("Failed to load session from IndexedDB", err);
-      }
+    if (authStatus === "unauthenticated") {
+      router.replace(`/login?from=/session/${urlSessionId}`);
     }
-    restore();
-  }, [id, setNotes]);
+  }, [authStatus, router, urlSessionId]);
+
+  // 2. On mount (once authenticated): call /api/session/start
+  useEffect(() => {
+    if (authStatus !== "authenticated") return;
+
+    const startSession = async () => {
+      if (!activePrompt) {
+        router.replace("/");
+        return;
+      }
+      try {
+        const res = await fetch("/api/session/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ promptId: activePrompt.id }),
+        });
+
+        if (!res.ok) throw new Error("Failed to start session");
+
+        const data = await res.json();
+
+        if (!activePrompt && data.promptId) {
+          const { PROMPTS } = await import("@/lib/prompts");
+          const found = PROMPTS.find((p) => p.id === data.promptId);
+          if (found) useSessionStore.getState().setActivePrompt(found);
+          else { router.replace("/"); return; }
+        }
+
+        syncFromServer({
+          sessionId: data.sessionId,
+          hintsUsed: data.hintsUsed,
+          scoresUsed: data.scoresUsed,
+          canvasState: data.canvasState,
+          chatHistory: data.chatHistory ?? [],
+          scoreResult: data.scoreResult,
+        });
+
+        if (data.hintsUsed > 0 || data.canvasState) {
+          setShowResumeToast(true);
+          setTimeout(() => setShowResumeToast(false), 3000);
+        }
+
+        if (data.canvasState) {
+          savedCanvasRef.current = data.canvasState;
+          setCurrentGraph(data.canvasState);
+          latestGraphRef.current = data.canvasState;
+        }
+        
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      } catch (err) {
+        console.error("Session start failed:", err);
+        setSessionError(true);
+      }
+    };
+
+    startSession();
+  }, [authStatus, activePrompt, router, syncFromServer]);
 
   // Handle graph changes & Auto-save
-  const onGraphChange = useCallback((g: SemanticGraph) => {
+  const onGraphChange = useCallback(async (g: SemanticGraph) => {
     latestGraphRef.current = g;
     setCurrentGraph(g);
 
-    // Fire-and-forget save
-    saveSessionLocally(id, {
-      graph: g,
-      notes: useSessionStore.getState().notes
-    }).catch(err => console.warn("Save failed", err));
-  }, [id]);
+    // Primary: save to DB
+    if (sessionId) {
+      try {
+        await fetch(`/api/session/${sessionId}/canvas`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ canvasState: g }),
+        });
+      } catch (err) {
+        console.warn("[canvas] DB save failed, falling back to IndexedDB");
+        // Fallback: IndexedDB
+        saveSessionLocally(urlSessionId, { graph: g, notes: useSessionStore.getState().notes });
+      }
+    }
+  }, [sessionId, urlSessionId]);
 
   // Debounced notes save
   const notesSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -87,7 +137,7 @@ export default function SessionPage({
     if (notesSaveTimeoutRef.current) clearTimeout(notesSaveTimeoutRef.current);
 
     notesSaveTimeoutRef.current = setTimeout(() => {
-      saveSessionLocally(id, {
+      saveSessionLocally(urlSessionId, {
         graph: latestGraphRef.current,
         notes: notes
       }).catch(err => console.warn("Notes save failed", err));
@@ -96,7 +146,7 @@ export default function SessionPage({
     return () => {
       if (notesSaveTimeoutRef.current) clearTimeout(notesSaveTimeoutRef.current);
     };
-  }, [notes, id]);
+  }, [notes, urlSessionId]);
 
   const [isScorePanelOpen, setIsScorePanelOpen] = useState(false);
 
@@ -118,7 +168,6 @@ export default function SessionPage({
     if (scoresUsed >= LIMITS.free.scoresPerSession) return;
     if (!activePrompt || !latestGraphRef.current) return;
 
-    incrementScores();
     setScoring(true);
 
     try {
@@ -126,10 +175,9 @@ export default function SessionPage({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: activePrompt,
+          sessionId,
           graph: latestGraphRef.current,
           history,
-          scoresUsed,
           llmProvider,
         }),
       });
@@ -174,6 +222,7 @@ export default function SessionPage({
         }
 
         setScoreResult(parsed);
+        syncScoresFromServer(scoresUsed + 1);
       } catch (err) {
         console.error("Score parse failed. Raw response was:", jsonText);
         setScoreResult({
@@ -190,7 +239,7 @@ export default function SessionPage({
   const handleClearSession = async () => {
     if (!confirm("Clear your drawing and notes? This cannot be undone.")) return;
 
-    await clearSessionLocally(id);
+    await clearSessionLocally(urlSessionId);
 
     // Reset state
     setNotes("");
@@ -201,6 +250,35 @@ export default function SessionPage({
     // For immediate UI reset, we'd need to talk to tldraw editor instance.
     window.location.reload();
   };
+
+  if (sessionError) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-400 text-sm">
+            Failed to load session.
+          </p>
+          <button
+            onClick={() => router.replace("/")}
+            className="mt-4 text-blue-400 text-sm hover:text-blue-300 underline"
+          >
+            Back to home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (authStatus === "loading" || !sessionId) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-5 h-5 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
+          <p className="text-gray-500 text-sm">Loading session...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!activePrompt) return null;
 
@@ -222,6 +300,15 @@ export default function SessionPage({
       {showToast && (
         <div className="fixed bottom-6 left-6 z-50 bg-gray-900 border border-emerald-500/30 text-emerald-400 px-4 py-2 rounded-lg shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-500 text-sm font-medium">
           ✨ Session restored
+        </div>
+      )}
+
+      {showResumeToast && (
+        <div 
+          className="fixed z-50 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-sm text-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-500" 
+          style={{ bottom: "24px", left: "50%", transform: "translateX(-50%)" }}
+        >
+          Session resumed — your progress has been restored
         </div>
       )}
     </div>

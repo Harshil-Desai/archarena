@@ -1,64 +1,168 @@
-import { NextRequest, NextResponse } from "next/server";
-import { buildScoringPrompt, createScoringStream } from "@/lib/ai";
-import { LIMITS } from "@/lib/limits";
-import type { LlmProvider } from "@/types";
+import { NextRequest, NextResponse } from "next/server"
+import { auth } from "@/auth"
+import { prisma } from "@/lib/prisma"
+import { buildScoringPrompt, createScoringStream } from "@/lib/ai"
+import { LIMITS } from "@/lib/limits"
+import type { LlmProvider } from "@/types"
 
 export async function POST(req: NextRequest) {
-  try {
-    const { prompt, graph, history, scoresUsed, llmProvider = "anthropic" } = await req.json();
+  // 1. Auth
+  const session = await auth()
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { error: "unauthorized" },
+      { status: 401 }
+    )
+  }
 
-    if (scoresUsed >= LIMITS.free.scoresPerSession) {
+  const { sessionId, graph, history, llmProvider = "anthropic" } = await req.json()
+
+  if (!sessionId) {
+    return NextResponse.json(
+      { error: "sessionId is required" },
+      { status: 400 }
+    )
+  }
+
+  // 2. Fetch from DB
+  const interviewSession = await prisma.interviewSession.findUnique({
+    where: { id: sessionId },
+    select: {
+      userId: true,
+      scoresUsed: true,
+      promptId: true,
+    },
+  })
+
+  if (!interviewSession) {
+    return NextResponse.json(
+      { error: "session_not_found" },
+      { status: 404 }
+    )
+  }
+
+  // 3. Ownership
+  if (interviewSession.userId !== session.user.id) {
+    return NextResponse.json(
+      { error: "forbidden" },
+      { status: 403 }
+    )
+  }
+
+  // 4. Limit check from DB
+  const userTier = session.user.tier ?? "FREE"
+  const limit = userTier === "FREE"
+    ? LIMITS.free.scoresPerSession
+    : Infinity
+
+  if (interviewSession.scoresUsed >= limit) {
+    return NextResponse.json(
+      { error: "free_limit_reached" },
+      { status: 403 }
+    )
+  }
+
+  // 5. Get active prompt
+  const { PROMPTS } = await import("@/lib/prompts")
+  const activePrompt = PROMPTS.find(
+    (p) => p.id === interviewSession.promptId
+  )
+  if (!activePrompt) {
+    return NextResponse.json(
+      { error: "prompt_not_found" },
+      { status: 404 }
+    )
+  }
+
+  // 6. Increment scoresUsed BEFORE streaming
+  await prisma.interviewSession.update({
+    where: { id: sessionId },
+    data: { scoresUsed: { increment: 1 } },
+  })
+
+  // 7. Build prompt + create stream
+  const provider: LlmProvider = llmProvider;
+  const scoringPrompt = buildScoringPrompt(activePrompt, graph, history)
+
+  let stream: ReadableStream
+  try {
+    stream = await createScoringStream(scoringPrompt, provider)
+  } catch (streamInitError: any) {
+    const status = streamInitError?.status ?? 500
+    if (status === 429) {
       return NextResponse.json(
-        { error: "free_limit_reached" },
-        { status: 403 }
-      );
+        {
+          error: "quota_exceeded",
+          message: "AI provider quota exceeded. Please wait a moment and try again.",
+          retryAfter: 60,
+        },
+        { status: 429 }
+      )
     }
 
-    const provider: LlmProvider = llmProvider;
-    const scoringPrompt = buildScoringPrompt(prompt, graph, history);
+    console.error(`[Score Error] Provider: ${provider}`, streamInitError);
 
-    let stream: ReadableStream;
+    return NextResponse.json(
+      { 
+        error: "scoring_failed", 
+        message: "Failed to start scoring. Check server logs.",
+        debug: {
+          provider,
+          errorType: streamInitError?.constructor?.name,
+          errorMessage: streamInitError?.message
+        }
+      },
+      { status: 500 }
+    )
+  }
 
+  // 8. Pipe stream to client
+  const { readable, writable } = new TransformStream()
+  const writer = writable.getWriter()
+  const encoder = new TextEncoder()
+
+  // Stream pipe + DB save in background
+  ;(async () => {
+    const reader = stream.getReader()
+    let fullText = ""
     try {
-      stream = await createScoringStream(scoringPrompt, provider);
-    } catch (streamInitError: any) {
-      const status = streamInitError?.status ?? 500;
-
-      if (status === 429) {
-        return NextResponse.json(
-          {
-            error: "quota_exceeded",
-            message: "AI provider quota exceeded. Please wait a moment and try again.",
-            retryAfter: 60,
-          },
-          { status: 429 }
-        );
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = new TextDecoder().decode(value)
+        fullText += chunk
+        await writer.write(encoder.encode(chunk))
       }
 
-      console.error(`[Score Error] Provider: ${provider}`, streamInitError);
+      // Stream finished — save to DB
+      try {
+        const sanitized = fullText
+          .trim()
+          .replace(/^```json\s*/i, "")
+          .replace(/^```\s*/i, "")
+          .replace(/```\s*$/i, "")
+          .trim()
 
-      return NextResponse.json(
-        { 
-          error: "scoring_failed", 
-          message: "Failed to start scoring. Check server logs.",
-          debug: {
-            provider,
-            errorType: streamInitError?.constructor?.name,
-            errorMessage: streamInitError?.message
-          }
-        },
-        { status: 500 }
-      );
+        if (sanitized.endsWith("}")) {
+          const scoreResult = JSON.parse(sanitized)
+          await prisma.interviewSession.update({
+            where: { id: sessionId },
+            data: {
+              scoreResult,
+              status: "SCORED",
+            },
+          })
+        }
+      } catch (parseErr) {
+        // JSON parse failed — log but don't crash
+        console.error("[score] Failed to save score to DB:", parseErr)
+      }
+    } finally {
+      await writer.close()
     }
+  })()
 
-    return new Response(stream, {
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    });
-  } catch (outerError) {
-    console.error("Score route outer error:", outerError);
-    return NextResponse.json(
-      { error: "unexpected_error" },
-      { status: 500 }
-    );
-  }
+  return new Response(readable, {
+    headers: { "Content-Type": "text/plain; charset=utf-8" },
+  })
 }

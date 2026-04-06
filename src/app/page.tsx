@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { nanoid } from "nanoid";
 import { useSessionStore } from "@/store/session";
 import { PROMPTS, FREE_PROMPT_COUNT, type DesignPrompt } from "@/lib/prompts";
+import { useSession } from "next-auth/react";
+import { UserMenu } from "@/components/auth/UserMenu";
 
 /* ──────────────────────────────────────────────
    Helpers
@@ -51,19 +53,14 @@ function Navbar() {
         ArchArena
       </span>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-3">
         <a
           href="#"
-          className="text-sm text-gray-400 hover:text-gray-200 transition-colors font-[family-name:var(--font-display)]"
+          className="text-sm text-gray-500 hover:text-gray-300"
         >
           GitHub
         </a>
-        <a
-          href="#prompts"
-          className="animate-glow-pulse inline-flex items-center gap-1.5 rounded-md border border-blue-500/60 bg-blue-600/10 px-4 py-2 text-sm font-semibold text-blue-400 transition-colors hover:bg-blue-600/20 font-[family-name:var(--font-display)]"
-        >
-          Start Practicing →
-        </a>
+        <UserMenu />
       </div>
     </nav>
   );
@@ -284,6 +281,7 @@ function PromptCard({
   visible: boolean;
 }) {
   const router = useRouter();
+  const { data: session } = useSession();
   const setActivePrompt = useSessionStore((s) => s.setActivePrompt);
   const isUnlocked = index < FREE_PROMPT_COUNT;
   const badge = difficultyBadge(prompt.difficulty);
@@ -294,6 +292,10 @@ function PromptCard({
       disabled={!isUnlocked}
       onClick={() => {
         if (!isUnlocked) return;
+        if (!session) {
+          router.push("/login?from=/");
+          return;
+        }
         setActivePrompt(prompt);
         router.push(`/session/${nanoid(8)}`);
       }}

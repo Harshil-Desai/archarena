@@ -1,4 +1,5 @@
 import { SemanticGraph } from '@/types'
+import { useSessionStore } from '@/store/session'
 
 interface CanvasValidationResult {
   canRequestHint: boolean
@@ -9,6 +10,15 @@ export function useCanvasValidation(
   graph: SemanticGraph | null
 ): CanvasValidationResult {
   
+  const { sessionId } = useSessionStore()
+
+  if (!sessionId) {
+    return {
+      canRequestHint: false, 
+      reason: "Connecting to session..."
+    }
+  }
+
   if (!graph || graph.nodes.length === 0) {
     return {
       canRequestHint: false,

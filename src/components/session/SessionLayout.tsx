@@ -5,6 +5,8 @@ import { useSessionStore } from "@/store/session";
 import type { LlmProvider } from "@/types";
 import { PromptBadge } from "../prompt/PromptBadge";
 import { SessionTimer } from "./SessionTimer";
+import { UsagePill } from "./UsagePill";
+import { UserMenu } from "@/components/auth/UserMenu";
 
 const PROVIDERS: { key: LlmProvider; label: string }[] = [
   { key: "anthropic", label: "Anthropic" },
@@ -89,19 +91,23 @@ export function SessionLayout({
               Clear
             </button>
             <LlmProviderToggle />
-            <button
-              type="button"
-              onClick={onScoreClick}
-              disabled={scoreButtonDisabled}
-              title={scoreButtonDisabled ? scoreButtonTooltip : undefined}
-              className={[
-                "rounded-lg px-3 py-2 text-sm font-medium border transition-colors",
-                "bg-gray-800 border-gray-700 text-gray-100 hover:bg-gray-700",
-                "disabled:opacity-60 disabled:cursor-not-allowed",
-              ].join(" ")}
-            >
-              Score My Design
-            </button>
+            <div className="flex items-center gap-2 ml-auto">
+              <UsagePill />
+              <UserMenu />
+              <button
+                type="button"
+                onClick={onScoreClick}
+                disabled={scoreButtonDisabled}
+                title={scoreButtonDisabled ? scoreButtonTooltip : undefined}
+                className={[
+                  "rounded-lg px-3 py-2 text-sm font-medium border transition-colors",
+                  "bg-gray-800 border-gray-700 text-gray-100 hover:bg-gray-700",
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                ].join(" ")}
+              >
+                Score My Design
+              </button>
+            </div>
           </div>
         </div>
       </header>

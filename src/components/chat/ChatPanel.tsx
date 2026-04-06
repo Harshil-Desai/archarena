@@ -23,12 +23,13 @@ function getRelativeTime(timestamp: number) {
 }
 
 export function ChatPanel({ graph }: ChatPanelProps) {
+  const sessionId = useSessionStore((s) => s.sessionId);
   const activePrompt = useSessionStore((s) => s.activePrompt);
   const hintsUsed = useSessionStore((s) => s.hintsUsed);
   const isAiThinking = useSessionStore((s) => s.isAiThinking);
   const messages = useSessionStore((s) => s.messages);
   const setAiThinking = useSessionStore((s) => s.setAiThinking);
-  const incrementHints = useSessionStore((s) => s.incrementHints);
+  const syncHintsFromServer = useSessionStore((s) => s.syncHintsFromServer);
   const addMessage = useSessionStore((s) => s.addMessage);
   const llmProvider = useSessionStore((s) => s.llmProvider);
 
@@ -43,11 +44,11 @@ export function ChatPanel({ graph }: ChatPanelProps) {
   }, [messages, isAiThinking]);
 
   const askHint = async () => {
+    if (!sessionId) return;
     if (!validation.canRequestHint || isAiThinking) return;
     if (!activePrompt || !graph) return;
     if (hintsUsed >= LIMITS.free.aiHintsPerSession) return;
 
-    incrementHints();
     setAiThinking(true);
 
     try {
@@ -55,10 +56,9 @@ export function ChatPanel({ graph }: ChatPanelProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: activePrompt,
+          sessionId,
           graph,
           history: messages,
-          hintsUsed,
           llmProvider,
         }),
       });
@@ -73,13 +73,27 @@ export function ChatPanel({ graph }: ChatPanelProps) {
 
       const data = await res.json();
 
-      addMessage({
+      if (typeof data.hintsUsed === "number") {
+        syncHintsFromServer(data.hintsUsed);
+      }
+
+      const aiMessage = {
         id: nanoid(),
-        role: "ai",
+        role: "ai" as const,
         content: data.hint,
         timestamp: Date.now(),
         model: data.model, // return this from the API
-      });
+      };
+      
+      addMessage(aiMessage);
+
+      // Save updated chat history sequentially to DB after AI response
+      const updatedMessages = [...messages, aiMessage];
+      await fetch(`/api/session/${sessionId}/chat`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chatHistory: updatedMessages }),
+      }).catch(err => console.warn("Failed to persist hint chat history to DB:", err));
     } catch (err) {
       addMessage({
         id: nanoid(),

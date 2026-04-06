@@ -56,6 +56,15 @@
 - Environment variables: server-only vars (API keys) have no
   `NEXT_PUBLIC_` prefix. Client vars must have it. Never mix these.
 
+# Auth variables (never hardcode these anywhere):
+# DATABASE_URL — Supabase PostgreSQL connection string
+# NEXTAUTH_SECRET — random 32-byte base64 string  
+# NEXTAUTH_URL — full app URL including protocol
+# GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET — from Google Cloud Console
+# GITHUB_CLIENT_ID / GITHUB_CLIENT_SECRET — from GitHub Developer Settings
+# These are server-only — none have NEXT_PUBLIC_ prefix
+# Client code must never import or reference these directly
+
 # ============================================================
 # AI / ANTHROPIC SDK
 # ============================================================
@@ -127,6 +136,15 @@
 - For free tier users, IndexedDB is the source of truth.
   If the session is not found in Redis, the client recovers from IndexedDB.
 - Keys: `session:{id}` → `{ graph, notes, savedAt }`
+
+# ============================================================
+# DATABASE
+# ============================================================
+- Always import prisma from `@/lib/prisma` 
+  Never import PrismaClient directly anywhere else
+- Never instantiate new PrismaClient() in any file
+- All DB queries go through API routes or 
+  server actions — never in client components
 
 # ============================================================
 # COMPONENTS
