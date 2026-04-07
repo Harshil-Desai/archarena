@@ -56,6 +56,29 @@
 - Environment variables: server-only vars (API keys) have no
   `NEXT_PUBLIC_` prefix. Client vars must have it. Never mix these.
 
+# Payments (LemonSqueezy)
+# - initLemonSqueezy() must be called before any LS API call
+# - Webhook secret lives in LEMONSQUEEZY_WEBHOOK_SECRET
+# - Never use NEXT_PUBLIC_ vars for secret operations
+# - Variant IDs are public — safe for NEXT_PUBLIC_ prefix
+# - Always verify webhook signature before processing
+# - Tier changes ONLY happen via verified webhooks, never
+#   via direct API calls from the client
+# LemonSqueezy webhook setup:
+# 1. Go to LemonSqueezy dashboard → Settings → Webhooks
+# 2. Add endpoint: https://yourdomain.com/api/billing/webhook
+# 3. For local dev use ngrok: ngrok http 3000
+#    Then add: https://[ngrok-url]/api/billing/webhook
+# 4. Select these events:
+#    - order_created
+#    - subscription_created
+#    - subscription_updated
+#    - subscription_cancelled
+#    - subscription_expired
+# 5. Copy the signing secret to LEMONSQUEEZY_WEBHOOK_SECRET
+# NEVER expose LEMONSQUEEZY_WEBHOOK_SECRET to the client
+# NEVER skip signature verification in the webhook handler
+
 # Auth variables (never hardcode these anywhere):
 # DATABASE_URL — Supabase PostgreSQL connection string
 # NEXTAUTH_SECRET — random 32-byte base64 string  
@@ -200,19 +223,3 @@
   log a warning but don't block the session.
 - Never let a failed hint request interrupt the drawing flow.
   Hints are best-effort, not blocking.
-
-# ============================================================
-# WHAT NOT TO DO
-# ============================================================
-- Do NOT add authentication logic yet (that's Week 3).
-- Do NOT add Prisma or database calls yet (that's Week 3).
-- Do NOT use `localStorage` for session state — use IndexedDB
-  (larger storage limit, non-blocking, structured).
-- Do NOT send the full tldraw store to any API endpoint.
-- Do NOT stream hints — they are short, return them as plain JSON.
-- Do NOT add new npm packages without flagging it. The current
-  dependencies are intentional and sufficient for Week 1-2.
-- Do NOT add collaborative multi-user canvas (Week 3+ scope).
-- Do NOT build mobile layouts — desktop only for now.
-- Do NOT use `console.log` in committed code. Use `console.warn`
-  for recoverable issues, `console.error` for real failures only.

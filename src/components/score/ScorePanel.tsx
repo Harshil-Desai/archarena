@@ -73,8 +73,8 @@ export function ScorePanel() {
   const scoresUsed = useSessionStore((s) => s.scoresUsed);
 
   const limitReached = scoresUsed >= LIMITS.free.scoresPerSession;
-  const disabledUpgradeButtonClasses =
-    "bg-amber-600 text-white px-3 py-1 rounded text-xs opacity-50 cursor-not-allowed";
+  const upgradeLinkClasses =
+    "bg-amber-600 text-white px-3 py-1 rounded text-xs hover:opacity-90 transition-opacity";
 
   if (isScoring) {
     return (
@@ -238,13 +238,9 @@ export function ScorePanel() {
                   <div>Start a fresh session for another pass, or</div>
                   <div>upgrade for unlimited reviews.</div>
                 </div>
-                <button
-                  type="button"
-                  disabled
-                  className={disabledUpgradeButtonClasses}
-                >
-                  Upgrade
-                </button>
+                <a href="/billing" className={upgradeLinkClasses}>
+                  Upgrade to Pro →
+                </a>
               </div>
             ) : (
               <div className="mt-4 rounded-lg border border-gray-800 bg-gray-950 text-sm text-gray-200 px-3 py-2 text-center">

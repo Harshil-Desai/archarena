@@ -1,5 +1,6 @@
 "use client"
 
+import type { Session } from "next-auth"
 import { useEffect, useRef, useState } from "react"
 import { useSession, signIn, signOut } from "next-auth/react"
 
@@ -29,7 +30,7 @@ export function UserMenu() {
   return <UserAvatar session={session} />
 }
 
-function UserAvatar({ session }: { session: any }) {
+function UserAvatar({ session }: { session: Session }) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -75,14 +76,21 @@ function UserAvatar({ session }: { session: any }) {
             <div className="flex items-center gap-2">
               <span className="text-sm text-white font-medium truncate">{name}</span>
               {tier === "FREE" ? (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px] font-semibold leading-none uppercase tracking-wider">FREE</span>
-              ) : (
-                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-300 text-[10px] font-semibold leading-none uppercase tracking-wider">PRO</span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px] font-semibold leading-none uppercase tracking-wider">FREE</span>
+            ) : (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-300 text-[10px] font-semibold leading-none uppercase tracking-wider">{tier}</span>
               )}
             </div>
             {email && <div className="text-xs text-gray-500 truncate mt-0.5">{email}</div>}
           </div>
           <div className="border-t border-gray-800 my-1" />
+          <a
+            href="/billing"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+          >
+            Billing & plans
+          </a>
           <button
             onClick={() => signOut({ callbackUrl: "/" })}
             className="w-full text-left px-3 py-2 text-sm text-gray-400 hover:text-red-400 rounded-lg hover:bg-gray-800 transition-colors"

@@ -50,7 +50,12 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Limit check from DB
-  const userTier = session.user.tier ?? "FREE"
+  // Always read tier fresh from DB — token may be stale
+  const userFromDb = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { tier: true },
+  })
+  const userTier = userFromDb?.tier ?? "FREE"
   const limit = userTier === "FREE"
     ? LIMITS.free.scoresPerSession
     : Infinity

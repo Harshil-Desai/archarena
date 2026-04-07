@@ -71,7 +71,6 @@ export function PromptSelector() {
                 <span
                   className="absolute top-3 right-3 px-2 py-1 text-[11px] font-semibold rounded-full bg-amber-600/20 border border-amber-500/40 text-amber-200"
                 >
-                  {/* TODO: wire to /billing in Week 3 */}
                   Pro
                 </span>
               )}

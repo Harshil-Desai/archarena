@@ -25,8 +25,8 @@ const EMPTY_GRAPH: SemanticGraph = {
 
 const amberUpgradeNudgeClasses =
   "bg-amber-900/30 border border-amber-600/50 rounded-lg p-3 text-amber-200 text-sm";
-const disabledUpgradeButtonClasses =
-  "bg-amber-600 text-white px-3 py-1 rounded text-xs opacity-50 cursor-not-allowed w-full mt-2";
+const upgradeLinkClasses =
+  "bg-amber-600 text-white px-3 py-1 rounded text-xs w-full mt-2 hover:opacity-90 transition-opacity";
 
 export function ChatPanel({ graph }: ChatPanelProps) {
   const sessionId = useSessionStore((s) => s.sessionId);
@@ -341,9 +341,9 @@ export function ChatPanel({ graph }: ChatPanelProps) {
                 Free plan has no nudges left.
               </div>
               <div className="mb-3">Upgrade if you want unlimited interviewer nudges.</div>
-              <button type="button" disabled className={disabledUpgradeButtonClasses}>
-                Upgrade
-              </button>
+              <a href="/billing" className={upgradeLinkClasses}>
+                Upgrade to Pro →
+              </a>
             </div>
           )}
         </div>
