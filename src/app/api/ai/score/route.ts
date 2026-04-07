@@ -57,7 +57,10 @@ export async function POST(req: NextRequest) {
 
   if (interviewSession.scoresUsed >= limit) {
     return NextResponse.json(
-      { error: "free_limit_reached" },
+      {
+        error: "free_limit_reached",
+        scoresUsed: interviewSession.scoresUsed,
+      },
       { status: 403 }
     )
   }

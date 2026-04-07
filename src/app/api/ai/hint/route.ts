@@ -53,7 +53,10 @@ export async function POST(req: NextRequest) {
 
   if (interviewSession.hintsUsed >= limit) {
     return NextResponse.json(
-      { error: "free_limit_reached" },
+      {
+        error: "free_limit_reached",
+        hintsUsed: interviewSession.hintsUsed,
+      },
       { status: 403 }
     )
   }
@@ -84,7 +87,7 @@ export async function POST(req: NextRequest) {
       hint = await generateAnthropicHint(activePrompt, graph, history);
       model = "haiku";
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Hint AI error:", err)
     return NextResponse.json(
       { error: "ai_failed", message: "Failed to generate hint." },
@@ -92,7 +95,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // 7. Increment hintsUsed in DB atomically
+  // 7. Increment only after a successful hint generation
   const updated = await prisma.interviewSession.update({
     where: { id: sessionId },
     data: { hintsUsed: { increment: 1 } },

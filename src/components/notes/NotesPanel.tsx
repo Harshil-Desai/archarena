@@ -27,7 +27,7 @@ export function NotesPanel() {
     <div className="h-full flex flex-col bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-sm">
       <div className="px-4 py-2 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between">
         <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          System Notes
+          Working Notes
         </span>
       </div>
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
@@ -35,7 +35,7 @@ export function NotesPanel() {
           ref={textareaRef}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Jot down your architectural decisions, scale assumptions, or follow-up questions here..."
+          placeholder="Write assumptions, capacity math, tradeoffs, and open risks."
           className="w-full h-full bg-transparent text-gray-200 text-sm outline-none resize-none placeholder:text-gray-600 leading-relaxed min-h-[120px]"
         />
       </div>

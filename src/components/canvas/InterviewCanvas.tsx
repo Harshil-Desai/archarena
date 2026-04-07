@@ -1,5 +1,5 @@
 "use client";
-import { Tldraw, useEditor, TLRecord, useValue } from "@tldraw/tldraw";
+import { Tldraw, useEditor, TLRecord, TLStoreSnapshot, useValue } from "@tldraw/tldraw";
 import "@tldraw/tldraw/tldraw.css";
 import { useEffect, useRef, useCallback } from "react";
 import { CUSTOM_SHAPE_UTILS } from "./shapes";
@@ -11,6 +11,8 @@ import { SemanticGraph } from "@/types";
 interface Props {
   onGraphChange: (graph: SemanticGraph) => void;
   onCanvasRecordsChange?: (records: TLRecord[]) => void;
+  onSnapshotChange?: (snapshot: TLStoreSnapshot) => void;
+  initialSnapshot?: TLStoreSnapshot | null;
 }
 
 const DEBOUNCE_MS = 1500;
@@ -75,7 +77,11 @@ function ZoomControls() {
   );
 }
 
-function CanvasWatcher({ onGraphChange, onCanvasRecordsChange }: Props) {
+function CanvasWatcher({
+  onGraphChange,
+  onCanvasRecordsChange,
+  onSnapshotChange,
+}: Props) {
   const editor = useEditor();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const lastGraphRef = useRef<SemanticGraph | null>(null);
@@ -86,6 +92,9 @@ function CanvasWatcher({ onGraphChange, onCanvasRecordsChange }: Props) {
     debounceRef.current = setTimeout(() => {
       const records = Object.values(editor.store.allRecords()) as TLRecord[];
       const graph = parseCanvasToGraph(records);
+      const snapshot = editor.getSnapshot().document;
+
+      onSnapshotChange?.(snapshot);
 
       // Client-side diff — only propagate if something changed
       if (hasGraphChanged(lastGraphRef.current, graph)) {
@@ -96,7 +105,7 @@ function CanvasWatcher({ onGraphChange, onCanvasRecordsChange }: Props) {
         onGraphChange(graph);
       }
     }, DEBOUNCE_MS);
-  }, [editor, onGraphChange, onCanvasRecordsChange]);
+  }, [editor, onGraphChange, onCanvasRecordsChange, onSnapshotChange]);
 
   useEffect(() => {
     const unsub = editor.store.listen(handleChange, { scope: "document" });
@@ -184,18 +193,25 @@ function CanvasKeyboardShortcuts() {
   return null;
 }
 
-export function InterviewCanvas({ onGraphChange, onCanvasRecordsChange }: Props) {
+export function InterviewCanvas({
+  onGraphChange,
+  onCanvasRecordsChange,
+  onSnapshotChange,
+  initialSnapshot,
+}: Props) {
   return (
     <div className="w-full h-full relative" data-canvas-container>
       <Tldraw
         shapeUtils={CUSTOM_SHAPE_UTILS}
         components={TLDRAW_COMPONENT_OVERRIDES}
+        snapshot={initialSnapshot ?? undefined}
       >
         <VendorToolbar />
         <CanvasKeyboardShortcuts />
         <CanvasWatcher
           onGraphChange={onGraphChange}
           onCanvasRecordsChange={onCanvasRecordsChange}
+          onSnapshotChange={onSnapshotChange}
         />
       </Tldraw>
       <CanvasHintOverlay />

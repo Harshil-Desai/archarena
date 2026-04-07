@@ -1,43 +1,135 @@
-const DB_NAME = "ArchArena";
-const STORE = "sessions";
+import type { TLStoreSnapshot } from "@tldraw/tldraw"
+import type { ChatMessage, Hint, ScoreResult, SemanticGraph } from "@/types"
 
-async function getDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      req.result.createObjectStore(STORE, { keyPath: "id" });
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
+const DB_NAME = "ArchArena"
+const STORE = "sessions"
+const DB_VERSION = 1
+const SESSION_KEY_PREFIX = "session:"
+
+export interface LocalSessionSnapshot {
+  id: string
+  key: string
+  promptId?: string
+  graph?: SemanticGraph | null
+  canvasSnapshot?: TLStoreSnapshot | null
+  notes?: string
+  hints?: Hint[]
+  chatHistory?: ChatMessage[]
+  scoreResult?: ScoreResult | null
+  hintsUsed?: number
+  scoresUsed?: number
+  savedAt: number
 }
 
-export async function saveSessionLocally(id: string, data: object) {
-  const db = await getDB();
-  return new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).put({ id, ...data, savedAt: Date.now() });
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
+export type LocalSessionUpdate = Omit<LocalSessionSnapshot, "id" | "key" | "savedAt">
+
+function toSessionKey(id: string): string {
+  return `${SESSION_KEY_PREFIX}${id}`
 }
 
-export async function loadSessionLocally(id: string) {
-  const db = await getDB();
-  return new Promise<any>((resolve, reject) => {
-    const tx = db.transaction(STORE, "readonly");
-    const req = tx.objectStore(STORE).get(id);
-    req.onsuccess = () => resolve(req.result ?? null);
-    req.onerror = () => reject(req.error);
-  });
+function supportsIndexedDb(): boolean {
+  return typeof window !== "undefined" && typeof window.indexedDB !== "undefined"
 }
 
-export async function clearSessionLocally(id: string) {
-  const db = await getDB();
-  return new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, "readwrite");
-    const req = tx.objectStore(STORE).delete(id);
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error);
-  });
-}
+async function getDB(): Promise<IDBDatabase | null> {
+  if (!supportsIndexedDb()) {
+    return null
+  }
+
+  try {
+    return await new Promise((resolve, reject) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION)
+      req.onupgradeneeded = () => {
+        const db = req.result
+        if (!db.objectStoreNames.contains(STORE)) {
+          db.createObjectStore(STORE, { keyPath: "key" })
+        }
+      }
+      req.onsuccess = () => resolve(req.result)
+      req.onerror = () => reject(req.error)
+    })
+  } catch (error) {
+    console.warn("IndexedDB open failed", error)
+    return null
+  }
+}
+
+export async function saveSessionLocally(
+  id: string,
+  data: LocalSessionUpdate
+): Promise<boolean> {
+  const db = await getDB()
+  if (!db) {
+    return false
+  }
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite")
+      tx.objectStore(STORE).put({
+        key: toSessionKey(id),
+        id,
+        ...data,
+        savedAt: Date.now(),
+      } satisfies LocalSessionSnapshot)
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+      tx.onabort = () => reject(tx.error)
+    })
+
+    return true
+  } catch (error) {
+    console.warn("IndexedDB save failed", error)
+    return false
+  } finally {
+    db.close()
+  }
+}
+
+export async function loadSessionLocally(id: string): Promise<LocalSessionSnapshot | null> {
+  const db = await getDB()
+  if (!db) {
+    return null
+  }
+
+  try {
+    const record = await new Promise<LocalSessionSnapshot | null>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readonly")
+      const req = tx.objectStore(STORE).get(toSessionKey(id))
+      req.onsuccess = () => resolve((req.result as LocalSessionSnapshot | undefined) ?? null)
+      req.onerror = () => reject(req.error)
+      tx.onabort = () => reject(tx.error)
+    })
+
+    return record
+  } catch (error) {
+    console.warn("IndexedDB load failed", error)
+    return null
+  } finally {
+    db.close()
+  }
+}
+
+export async function clearSessionLocally(id: string): Promise<boolean> {
+  const db = await getDB()
+  if (!db) {
+    return false
+  }
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite")
+      const req = tx.objectStore(STORE).delete(toSessionKey(id))
+      req.onsuccess = () => resolve()
+      req.onerror = () => reject(req.error)
+      tx.onabort = () => reject(tx.error)
+    })
+
+    return true
+  } catch (error) {
+    console.warn("IndexedDB clear failed", error)
+    return false
+  } finally {
+    db.close()
+  }
+}

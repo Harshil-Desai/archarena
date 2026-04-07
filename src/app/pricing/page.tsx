@@ -19,12 +19,12 @@ function Navbar() {
         >
           Pricing
         </Link>
-        <a
+        <Link
           href="/#faq"
           className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
         >
           FAQ
-        </a>
+        </Link>
         <a
           href="https://github.com/Harshil-Desai/archarena"
           target="_blank"
@@ -58,50 +58,50 @@ const TIERS: Tier[] = [
   {
     name: "Free",
     price: "$0",
-    description: "Perfect for getting a taste of AI-driven interviews.",
-    ctaText: "Start Practicing",
+    description: "Enough to get on the board and feel the pressure.",
+    ctaText: "Start Free",
     features: [
       { name: "5 Preset prompts", included: true },
-      { name: "5 AI questions per session", included: true },
-      { name: "1 AI interviewer persona", included: true },
+      { name: "5 interviewer nudges per session", included: true },
+      { name: "1 interviewer mode", included: true },
       { name: "0 Sessions saved", included: false },
-      { name: "Session export (PNG)", included: false },
-      { name: "Session summary / feedback", included: false },
+      { name: "Session export", included: false },
+      { name: "Written review", included: false },
       { name: "Shareable session link", included: false },
-      { name: "Interview history", included: false },
+      { name: "Saved session history", included: false },
     ],
   },
   {
     name: "Pro",
     price: "$12",
-    description: "For serious candidates preparing for upcoming interviews.",
+    description: "For candidates who want repetition, history, and fewer caps.",
     ctaText: "Upgrade to Pro",
     isPopular: true,
     features: [
       { name: "15 Preset prompts", included: true },
-      { name: "Unlimited AI questions per session", included: true },
-      { name: "3 AI interviewer personas", included: true },
+      { name: "Unlimited interviewer nudges", included: true },
+      { name: "3 interviewer modes", included: true },
       { name: "10 Sessions saved", included: true },
-      { name: "Session export (PNG)", included: true },
-      { name: "Session summary / feedback", included: true },
+      { name: "Session export", included: true },
+      { name: "Written review", included: true },
       { name: "Shareable session link", included: true },
-      { name: "Interview history", included: true },
+      { name: "Saved session history", included: true },
     ],
   },
   {
     name: "Premium",
     price: "$29",
-    description: "The ultimate preparation suite with custom scenarios.",
+    description: "For custom drills, more range, and no storage ceiling.",
     ctaText: "Upgrade to Premium",
     features: [
       { name: "15 + custom preset prompts", included: true },
-      { name: "Unlimited AI questions per session", included: true },
-      { name: "3 + custom tone AI interviewer personas", included: true },
+      { name: "Unlimited interviewer nudges", included: true },
+      { name: "3 + custom interviewer modes", included: true },
       { name: "Unlimited sessions saved", included: true },
-      { name: "Session export (PNG)", included: true },
-      { name: "Session summary / feedback", included: true },
+      { name: "Session export", included: true },
+      { name: "Written review", included: true },
       { name: "Shareable session link", included: true },
-      { name: "Interview history", included: true },
+      { name: "Saved session history", included: true },
     ],
   },
 ];
@@ -179,10 +179,10 @@ export default function PricingPage() {
         <div className="w-full max-w-7xl mx-auto px-6 py-20 lg:py-28 relative z-10 flex flex-col items-center">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h1 className="font-[family-name:var(--font-display)] text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-4">
-              Simple, transparent pricing.
+              Pick the interview cadence.
             </h1>
             <p className="text-lg text-gray-400">
-              Get the practice you need. Choose the plan that fits your interview timeline.
+              Free gets you on the board. Paid plans remove the caps and keep the trail.
             </p>
           </div>
 

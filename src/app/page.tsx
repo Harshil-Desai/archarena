@@ -239,10 +239,10 @@ function SessionMockup() {
           </svg>
         </div>
 
-        {/* AI chat side */}
-        <div className="flex-[2] flex flex-col p-3 bg-gray-950/60">
-          <span className="text-[10px] uppercase tracking-widest text-gray-600 mb-3 font-[family-name:var(--font-display)] flex items-center gap-2">
-            AI Interviewer
+          {/* AI chat side */}
+          <div className="flex-[2] flex flex-col p-3 bg-gray-950/60">
+            <span className="text-[10px] uppercase tracking-widest text-gray-600 mb-3 font-[family-name:var(--font-display)] flex items-center gap-2">
+            Interviewer
             <span className="h-1.5 w-1.5 rounded-full bg-blue-500 animate-pulse" />
           </span>
 
@@ -318,43 +318,8 @@ function PromptSelector() {
         onClick={handleStart}
         className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3.5 rounded-lg text-sm font-bold shadow-lg shadow-blue-900/20 transition-all hover:-translate-y-0.5 active:translate-y-0 font-[family-name:var(--font-display)] whitespace-nowrap"
       >
-        Start Session →
+        {session ? "Start Session" : "Sign in to start"}
       </button>
-    </div>
-  );
-}
-
-/** Trust / Social Proof section */
-function SocialProof() {
-  return (
-    <div className="w-full border-y border-gray-800/50 bg-gray-900/20 py-8 lg:py-10">
-      <div className="max-w-7xl mx-auto px-6 lg:px-16 flex flex-col md:flex-row items-center justify-between gap-8 md:gap-12">
-        <div className="flex flex-col items-center md:items-start gap-1">
-          <span className="text-2xl lg:text-3xl font-bold text-gray-100 font-[family-name:var(--font-display)]">10,000+</span>
-          <span className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500">Interviews Conducted</span>
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-8 lg:gap-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-          {["Meta", "Google", "Amazon", "Uber", "Netflix"].map((brand) => (
-            <span key={brand} className="text-sm font-bold text-gray-400 font-[family-name:var(--font-display)]">
-              {brand}
-            </span>
-          ))}
-        </div>
-
-        <div className="hidden lg:flex items-center gap-4 pl-8 border-l border-gray-800">
-          <div className="flex -space-x-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-8 w-8 rounded-full border-2 border-gray-900 bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-400">
-                {String.fromCharCode(64 + i)}
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-gray-500 italic max-w-[140px]">
-            &quot;The most realistic system design prep tool I&apos;ve used.&quot;
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
@@ -656,20 +621,6 @@ function ScoreIcon() {
   );
 }
 
-function BoltIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      className="w-5 h-5"
-      stroke="currentColor"
-      strokeWidth={1.8}
-    >
-      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-    </svg>
-  );
-}
-
 /* ──────────────────────────────────────────────
    Main page
    ────────────────────────────────────────────── */
@@ -722,9 +673,8 @@ export default function Home() {
           </h1>
 
           <p className="animate-fade-up delay-200 text-base lg:text-lg text-gray-200 max-w-lg font-medium leading-relaxed">
-            Pick a question, draw your architecture, and get real-time follow-up
-            questions from an AI interviewer that watches your canvas. Scored out
-            of 100.
+            Pick a prompt, draw the system, and answer follow-ups from an interviewer
+            that reads the board instead of guessing from chat alone.
           </p>
 
           <PromptSelector />
@@ -744,19 +694,19 @@ export default function Home() {
           <Step
             num="01"
             title="Pick a question"
-            text="Choose from 15 system design prompts — from URL shorteners to distributed databases."
+            text="Pick a prompt and get to the main path fast."
             icon={<QuestionIcon />}
           />
           <Step
             num="02"
             title="Draw your solution"
-            text="Use vendor-specific components — PostgreSQL, Redis, Kafka — on a real whiteboard canvas."
+            text="Use real components on the whiteboard: PostgreSQL, Redis, Kafka, queues, gateways."
             icon={<BoxArrowIcon />}
           />
           <Step
             num="03"
             title="Get grilled"
-            text="The AI watches your diagram in real-time and asks the questions a senior interviewer would."
+            text="The interviewer pushes on bottlenecks, failure modes, and tradeoffs as the diagram evolves."
             icon={<ChatIcon />}
           />
         </div>
@@ -772,7 +722,7 @@ export default function Home() {
             Choose a question to start
           </h2>
           <p className="mt-2 text-sm text-gray-500 font-[family-name:var(--font-display)]">
-            Free tier includes {FREE_PROMPT_COUNT} questions. No sign-up.
+            Free plan includes {FREE_PROMPT_COUNT} questions. Sign in to start and resume sessions.
           </p>
         </div>
 
@@ -803,12 +753,12 @@ export default function Home() {
           <Feature
             icon={<DiagramIcon />}
             label="AI that reads your diagram"
-            text="Not just your chat — it parses your actual architecture."
+            text="It reads the board, not just the transcript."
           />
           <Feature
             icon={<ScoreIcon />}
             label="Scored out of 100"
-            text="Breakdown by scalability, reliability, and tradeoffs."
+            text="Review by scalability, reliability, tradeoffs, and completeness."
           />
         </div>
       </section>

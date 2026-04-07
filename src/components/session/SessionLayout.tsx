@@ -48,6 +48,7 @@ export function SessionLayout({
   left,
   chat,
   notes,
+  exportButton,
   onScoreClick,
   onClearSession,
   isScorePanelOpen,
@@ -59,6 +60,7 @@ export function SessionLayout({
   left: ReactNode;
   chat: ReactNode;
   notes: ReactNode;
+  exportButton?: ReactNode;
   onScoreClick: () => void;
   onClearSession: () => void;
   isScorePanelOpen: boolean;
@@ -88,10 +90,11 @@ export function SessionLayout({
               onClick={onClearSession}
               className="text-xs text-gray-500 hover:text-red-400 transition-colors"
             >
-              Clear
+              Reset
             </button>
             <LlmProviderToggle />
             <div className="flex items-center gap-2 ml-auto">
+              {exportButton}
               <UsagePill />
               <UserMenu />
               <button
@@ -105,7 +108,7 @@ export function SessionLayout({
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                 ].join(" ")}
               >
-                Score My Design
+                Run Review
               </button>
             </div>
           </div>

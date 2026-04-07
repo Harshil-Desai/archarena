@@ -19,7 +19,7 @@ function getGeminiClient(): GoogleGenerativeAI {
 }
 
 // ── Anthropic model routing ────────────────────────────────────────
-export const MODEL_MAP: Record<AIModel, string> = {
+export const MODEL_MAP: Record<Exclude<AIModel, "flash">, string> = {
   haiku: "claude-haiku-4-5-20251001",    // background hints, chat
   sonnet: "claude-sonnet-4-6",           // final scoring
 };
@@ -107,6 +107,19 @@ export function formatGraphForPrompt(graph: SemanticGraph): string {
   return lines.join("\n");
 }
 
+function formatHistoryForPrompt(history: ChatMessage[] = []): string {
+  if (history.length === 0) {
+    return "No prior conversation yet."
+  }
+
+  return history
+    .map((message) => {
+      const speaker = message.role === "user" ? "Candidate" : "Interviewer"
+      return `${speaker}: ${message.content}`
+    })
+    .join("\n")
+}
+
 // PROMPT 1 — background hint (fast model)
 export function buildHintPrompt(
   prompt: DesignPrompt,
@@ -166,6 +179,7 @@ export function buildScoringPrompt(
   history: ChatMessage[]
 ): string {
   const canvasContext = formatGraphForPrompt(graph);
+  const historyContext = formatHistoryForPrompt(history);
 
   return `You are a senior staff engineer scoring a system design interview.
 
@@ -177,6 +191,11 @@ ${prompt.scoringCriteria.map((c, i) => `${i + 1}. ${c}`).join("\n")}
 
 ## Submitted Architecture
 ${canvasContext}
+
+## Candidate Clarifications And Discussion
+${historyContext}
+
+Use the chat history to give credit for tradeoffs, clarifications, and constraints the candidate explicitly discussed, even if every detail is not visible on the canvas.
 
 Respond with ONLY a raw JSON object. 
 No markdown. No code fences. No backticks. No explanation. 
@@ -194,6 +213,40 @@ the very last must be '}'.
   "feedback": "<2-3 sentence summary referencing their actual components>",
   "missedConcepts": ["<specific concept>", "..."]
 }`
+}
+
+export function buildChatPrompt(
+  prompt: DesignPrompt,
+  graph: SemanticGraph,
+  history: ChatMessage[]
+): string {
+  const canvasContext = formatGraphForPrompt(graph)
+  const historyContext = formatHistoryForPrompt(history)
+
+  return `You are a senior staff engineer conducting a live system design interview.
+
+## Interview Question
+"${prompt.title}" — ${prompt.description}
+
+## Current Architecture
+${canvasContext}
+
+## Conversation So Far
+${historyContext}
+
+## Your Task
+Reply as the interviewer to the candidate's latest message.
+
+Rules:
+- Answer the latest question directly.
+- Stay grounded in the actual canvas and conversation, not a generic textbook answer.
+- Push the candidate forward with one concrete follow-up or tradeoff when useful.
+- Do not dump a full solution.
+- Keep the response concise: 2-4 sentences.
+- Do not use bullet points.
+- Do not add labels like "Interviewer:".
+
+Write the response directly and stop.`
 }
 
 // ── Anthropic implementations ──────────────────────────────────────
@@ -215,6 +268,20 @@ export async function generateAnthropicHint(
   return hint;
 }
 
+export async function generateAnthropicChatReply(
+  prompt: DesignPrompt,
+  graph: SemanticGraph,
+  history: ChatMessage[]
+): Promise<string> {
+  const message = await anthropicClient.messages.create({
+    model: MODEL_MAP.haiku,
+    max_tokens: 220,
+    messages: [{ role: "user", content: buildChatPrompt(prompt, graph, history) }],
+  })
+
+  return (message.content[0] as { type: "text"; text: string }).text.trim()
+}
+
 // ── Gemini implementations ─────────────────────────────────────────
 
 export async function generateGeminiHint(
@@ -231,6 +298,22 @@ export async function generateGeminiHint(
   });
 
   return result.response.text();
+}
+
+export async function generateGeminiChatReply(
+  prompt: DesignPrompt,
+  graph: SemanticGraph,
+  history: ChatMessage[]
+): Promise<string> {
+  const client = getGeminiClient()
+  const model = client.getGenerativeModel({ model: GEMINI_MODEL_MAP.flash })
+
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: buildChatPrompt(prompt, graph, history) }] }],
+    generationConfig: { maxOutputTokens: 300 },
+  })
+
+  return result.response.text().trim()
 }
 
 export async function createScoringStream(

@@ -1,6 +1,5 @@
 "use client";
 
-import { ScoreResult } from "@/types";
 import { useSessionStore } from "@/store/session";
 import { LIMITS } from "@/lib/limits";
 
@@ -88,7 +87,7 @@ export function ScorePanel() {
             />
             <div>
               <p className="text-sm font-medium text-gray-200">
-                Evaluating your architecture...
+                Running review...
               </p>
               <div className="mt-3 space-y-2">
                 <div className="h-2 bg-gray-800 rounded animate-pulse w-full" />
@@ -111,23 +110,22 @@ export function ScorePanel() {
               <div className="text-2xl mb-3">⚠️</div>
               <p className="text-red-400 text-sm font-medium">
                 {scoreResult.isQuotaError 
-                  ? 'AI quota exceeded' 
-                  : 'Scoring failed'}
+                  ? 'Provider limit hit' 
+                  : 'Review failed'}
               </p>
               <p className="text-gray-400 text-xs mt-2">
                 {scoreResult.error}
               </p>
               {scoreResult.isQuotaError && (
                 <p className="text-gray-500 text-xs mt-3">
-                  Try switching to Anthropic in the model toggle,
-                  or wait ~60 seconds for Gemini quota to reset.
+                  Switch providers or wait a minute, then run the review again.
                 </p>
               )}
               <button
                 onClick={() => setScoreResult(null)}
                 className="mt-4 text-xs text-blue-400 hover:text-blue-300 underline"
               >
-                Dismiss and try again
+                Clear and retry
               </button>
             </div>
           </div>
@@ -229,28 +227,28 @@ export function ScorePanel() {
         <div className="h-full flex flex-col items-stretch justify-center">
           <div className="border border-dashed border-gray-800 rounded-xl p-4 bg-gray-950/20">
             <p className="text-sm text-gray-300 text-center">
-              Click &apos;Score My Design&apos; when ready
+              Run review when the main path is on the board.
             </p>
             {limitReached ? (
               <div className="mt-4 bg-amber-900/30 border border-amber-600/50 rounded-lg p-3 text-amber-200 text-sm">
                 <div className="font-semibold mb-2">
-                  🔒 Free tier: {LIMITS.free.scoresPerSession} score per session
+                  Free plan gets {LIMITS.free.scoresPerSession} review per session.
                 </div>
                 <div className="mb-3">
-                  <div>Start a new session to score again, or</div>
-                  <div>upgrade to Pro for unlimited scoring.</div>
+                  <div>Start a fresh session for another pass, or</div>
+                  <div>upgrade for unlimited reviews.</div>
                 </div>
                 <button
                   type="button"
                   disabled
                   className={disabledUpgradeButtonClasses}
                 >
-                  Upgrade to Pro →
+                  Upgrade
                 </button>
               </div>
             ) : (
               <div className="mt-4 rounded-lg border border-gray-800 bg-gray-950 text-sm text-gray-200 px-3 py-2 text-center">
-                Score My Design
+                Run Review
               </div>
             )}
           </div>

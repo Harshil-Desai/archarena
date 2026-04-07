@@ -21,6 +21,8 @@ interface SessionState {
     scoresUsed: number;
     canvasState: SemanticGraph | null;
     chatHistory: ChatMessage[];
+    hints?: Hint[];
+    notes?: string;
     scoreResult: ScoreResult | null;
   }) => void;
 
@@ -32,6 +34,7 @@ interface SessionState {
   hints: Hint[];
   addHint: (h: Hint) => void;
   markHintRead: (id: string) => void;
+  markAllHintsRead: () => void;
   unreadHintCount: number;
 
   // Chat (user ↔ AI back-and-forth)
@@ -60,6 +63,8 @@ interface SessionState {
   // Usage counters (free tier enforcement)
   hintsUsed: number;
   scoresUsed: number;
+  incrementHintsUsed: () => void;
+  incrementScoresUsed: () => void;
   syncHintsFromServer: (hintsUsed: number) => void;
   syncScoresFromServer: (scoresUsed: number) => void;
 }
@@ -78,6 +83,10 @@ export const useSessionStore = create<SessionState>((set) => ({
     sessionId: data.sessionId,
     hintsUsed: data.hintsUsed,
     scoresUsed: data.scoresUsed,
+    lastSentGraph: data.canvasState,
+    notes: data.notes ?? "",
+    hints: data.hints ?? [],
+    unreadHintCount: (data.hints ?? []).filter((hint) => !hint.isRead).length,
     scoreResult: data.scoreResult,
     messages: data.chatHistory ?? [],
   }),
@@ -88,11 +97,24 @@ export const useSessionStore = create<SessionState>((set) => ({
   hints: [],
   addHint: (h) => set((s) => ({
     hints: [...s.hints, h],
-    unreadHintCount: s.unreadHintCount + 1,
+    unreadHintCount: h.isRead ? s.unreadHintCount : s.unreadHintCount + 1,
   })),
-  markHintRead: (id) => set((s) => ({
-    hints: s.hints.map((h) => h.id === id ? { ...h, isRead: true } : h),
-    unreadHintCount: Math.max(0, s.unreadHintCount - 1),
+  markHintRead: (id) => set((s) => {
+    const target = s.hints.find((hint) => hint.id === id);
+    if (!target || target.isRead) {
+      return s;
+    }
+
+    return {
+      hints: s.hints.map((hint) =>
+        hint.id === id ? { ...hint, isRead: true } : hint
+      ),
+      unreadHintCount: Math.max(0, s.unreadHintCount - 1),
+    };
+  }),
+  markAllHintsRead: () => set((s) => ({
+    hints: s.hints.map((hint) => ({ ...hint, isRead: true })),
+    unreadHintCount: 0,
   })),
   unreadHintCount: 0,
 
@@ -121,6 +143,8 @@ export const useSessionStore = create<SessionState>((set) => ({
 
   hintsUsed: 0,
   scoresUsed: 0,
+  incrementHintsUsed: () => set((s) => ({ hintsUsed: s.hintsUsed + 1 })),
+  incrementScoresUsed: () => set((s) => ({ scoresUsed: s.scoresUsed + 1 })),
   syncHintsFromServer: (hintsUsed) => set({ hintsUsed }),
   syncScoresFromServer: (scoresUsed) => set({ scoresUsed }),
 }));

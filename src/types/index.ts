@@ -59,7 +59,7 @@ export interface SemanticGraph {
 }
 
 // AI interactions
-export type AIModel = "haiku" | "sonnet";  // haiku=hints, sonnet=scoring
+export type AIModel = "haiku" | "flash" | "sonnet";  // flash/haiku=chat+hints, sonnet=scoring
 export type LlmProvider = "anthropic" | "gemini";
 
 export interface Hint {
