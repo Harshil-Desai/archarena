@@ -110,6 +110,46 @@ export async function loadSessionLocally(id: string): Promise<LocalSessionSnapsh
   }
 }
 
+// ── UI flag helpers (one-time shown states, etc.) ─────────────────
+// Stored in the same object store with a "flag:" key prefix.
+
+export async function getUiFlag(name: string): Promise<boolean> {
+  const db = await getDB()
+  if (!db) return false
+  try {
+    const result = await new Promise<{ key: string; value: boolean } | undefined>(
+      (resolve, reject) => {
+        const tx = db.transaction(STORE, "readonly")
+        const req = tx.objectStore(STORE).get(`flag:${name}`)
+        req.onsuccess = () => resolve(req.result as { key: string; value: boolean } | undefined)
+        req.onerror = () => reject(req.error)
+      }
+    )
+    return result?.value ?? false
+  } catch {
+    return false
+  } finally {
+    db.close()
+  }
+}
+
+export async function setUiFlag(name: string, value: boolean): Promise<void> {
+  const db = await getDB()
+  if (!db) return
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE, "readwrite")
+      tx.objectStore(STORE).put({ key: `flag:${name}`, value })
+      tx.oncomplete = () => resolve()
+      tx.onerror = () => reject(tx.error)
+    })
+  } catch (error) {
+    console.warn("IndexedDB setUiFlag failed", error)
+  } finally {
+    db.close()
+  }
+}
+
 export async function clearSessionLocally(id: string): Promise<boolean> {
   const db = await getDB()
   if (!db) {

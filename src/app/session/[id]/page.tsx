@@ -45,14 +45,13 @@ export default function SessionPage({
 }) {
   const { id: urlSessionId } = use(params);
   const router = useRouter();
-  const { status: authStatus } = useSession();
+  const { data: authSession, status: authStatus } = useSession();
   const { syncFromServer, activePrompt, sessionId } = useSessionStore();
   
   const history = useSessionStore((s) => s.messages);
   const hints = useSessionStore((s) => s.hints);
   const hintsUsed = useSessionStore((s) => s.hintsUsed);
   const scoresUsed = useSessionStore((s) => s.scoresUsed);
-  const incrementScoresUsed = useSessionStore((s) => s.incrementScoresUsed);
   const setScoring = useSessionStore((s) => s.setScoring);
   const setScoreResult = useSessionStore((s) => s.setScoreResult);
   const setLastSentGraph = useSessionStore((s) => s.setLastSentGraph);
@@ -184,6 +183,23 @@ export default function SessionPage({
       router.replace(`/login?from=/session/${urlSessionId}`);
     }
   }, [authStatus, router, urlSessionId]);
+
+  // 1b. Tier guard: FREE users cannot access pro prompts via direct URL
+  useEffect(() => {
+    if (!isSessionHydrated || !activePrompt || authStatus !== "authenticated") return;
+
+    const userTier = (authSession?.user as { tier?: string } | undefined)?.tier ?? "FREE";
+    if (userTier !== "FREE") return; // PRO / PREMIUM: no restriction
+
+    const { PROMPTS, FREE_PROMPT_COUNT } = require("@/lib/prompts") as {
+      PROMPTS: { id: string }[];
+      FREE_PROMPT_COUNT: number;
+    };
+    const freePromptIds = PROMPTS.slice(0, FREE_PROMPT_COUNT).map((p) => p.id);
+    if (!freePromptIds.includes(activePrompt.id)) {
+      router.replace("/");
+    }
+  }, [activePrompt, authSession, authStatus, isSessionHydrated, router]);
 
   // 2. On mount (once authenticated): call /api/session/start
   useEffect(() => {
@@ -341,7 +357,6 @@ export default function SessionPage({
     if (!activePrompt || !latestGraphRef.current) return;
 
     setScoring(true);
-    incrementScoresUsed();
 
     try {
       const res = await fetch("/api/ai/score", {
@@ -393,11 +408,6 @@ export default function SessionPage({
       try {
         const sanitized = sanitizeJson(jsonText);
 
-        if (process.env.NODE_ENV === "development") {
-          console.log("[score] raw response:", jsonText.slice(0, 200));
-          console.log("[score] sanitized:", sanitized.slice(0, 200));
-        }
-
         const parsed = JSON.parse(sanitized);
 
         if (typeof parsed.score !== "number") {
@@ -405,6 +415,7 @@ export default function SessionPage({
         }
 
         setScoreResult(parsed);
+        syncScoresFromServer(useSessionStore.getState().scoresUsed + 1);
       } catch {
         console.error("Score parse failed. Raw response was:", jsonText);
         setScoreResult({
@@ -507,7 +518,7 @@ export default function SessionPage({
         }
         chat={<ChatPanel graph={currentGraph} />}
         notes={<NotesPanel />}
-        exportButton={<ExportButton sessionId={sessionId} graph={currentGraph} />}
+        exportButton={<div id="export-button-portal" className="flex items-center min-w-[70px] justify-end" />}
         onScoreClick={handleScoreClick}
         onClearSession={handleClearSession}
         isScorePanelOpen={isScorePanelOpen}

@@ -1,0 +1,107 @@
+# ============================================================
+# archarena — .cursorignore
+# Tells Cursor what NOT to index or include in AI context.
+# Keep this lean — over-ignoring breaks autocomplete and
+# cross-file understanding.
+# ============================================================
+
+# ---- Dependencies ----
+node_modules/
+.pnp
+.pnp.js
+
+# ---- Next.js build output ----
+.next/
+out/
+build/
+dist/
+
+# ---- Environment & secrets ----
+# Never let AI see real keys, even accidentally
+.env
+.env.local
+.env.*.local
+.env.production
+
+# ---- Generated / cache ----
+.turbo/
+.vercel/
+.cache/
+*.tsbuildinfo
+next-env.d.ts
+
+# ---- tldraw internals ----
+# Large auto-generated asset files — not useful for AI context
+node_modules/@tldraw/assets/
+node_modules/@tldraw/tldraw/dist/
+
+# ---- Test output ----
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+
+# ---- OS & editor noise ----
+.DS_Store
+Thumbs.db
+*.suo
+*.user
+.idea/
+*.swp
+*.swo
+
+# ---- Logs ----
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+
+# ---- Package manager artifacts ----
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.npm/
+
+# ---- Prisma (not needed until Week 3) ----
+# Uncomment these lines when you add Prisma:
+# prisma/migrations/
+# prisma/dev.db
+
+# ---- Public assets ----
+# Vendor icons are binary assets — no value indexing them
+public/icons/
+
+# ---- Large static files ----
+public/fonts/
+*.woff
+*.woff2
+*.ttf
+*.otf
+*.eot
+
+# ---- Media ----
+*.mp4
+*.mp3
+*.wav
+*.ogg
+*.mov
+*.webm
+*.gif
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.avif
+*.ico
+*.svg
+
+# ---- Storybook (if added later) ----
+storybook-static/
+.storybook/
+
+# ---- Docker (if added later) ----
+.dockerignore
+Dockerfile*
+docker-compose*

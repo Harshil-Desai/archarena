@@ -4,6 +4,7 @@ import { nanoid } from "nanoid";
 import { useRouter } from "next/navigation";
 import { useSessionStore } from "@/store/session";
 import { LIMITS } from "@/lib/limits";
+import { ProBadge } from "@/components/ui/ProBadge";
 import { PROMPTS, type DesignPrompt } from "@/lib/prompts";
 
 const FREE_PROMPT_COUNT = LIMITS.free.promptCount;
@@ -68,10 +69,8 @@ export function PromptSelector() {
               title={!isUnlocked ? "Available on Pro plan" : undefined}
             >
               {!isUnlocked && (
-                <span
-                  className="absolute top-3 right-3 px-2 py-1 text-[11px] font-semibold rounded-full bg-amber-600/20 border border-amber-500/40 text-amber-200"
-                >
-                  Pro
+                <span className="absolute top-3 right-3">
+                  <ProBadge />
                 </span>
               )}
 

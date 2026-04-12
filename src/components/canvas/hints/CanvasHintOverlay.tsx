@@ -1,28 +1,21 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { getUiFlag, setUiFlag } from "@/lib/indexeddb";
 
-const STORAGE_KEY = "sysdraw-canvas-hint-seen";
+const FLAG_NAME = "canvas-hint-seen";
 
 export function CanvasHintOverlay() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    try {
-      if (!localStorage.getItem(STORAGE_KEY)) {
-        setVisible(true);
-      }
-    } catch {
-      // localStorage not available — skip hint
-    }
+    getUiFlag(FLAG_NAME).then((seen) => {
+      if (!seen) setVisible(true);
+    });
   }, []);
 
   const dismiss = useCallback(() => {
     setVisible(false);
-    try {
-      localStorage.setItem(STORAGE_KEY, "1");
-    } catch {
-      // non-fatal
-    }
+    setUiFlag(FLAG_NAME, true);
   }, []);
 
   useEffect(() => {

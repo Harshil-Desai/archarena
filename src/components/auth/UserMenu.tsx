@@ -76,14 +76,25 @@ function UserAvatar({ session }: { session: Session }) {
             <div className="flex items-center gap-2">
               <span className="text-sm text-white font-medium truncate">{name}</span>
               {tier === "FREE" ? (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px] font-semibold leading-none uppercase tracking-wider">FREE</span>
-            ) : (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-800 text-gray-400 text-[10px] font-semibold leading-none uppercase tracking-wider">FREE</span>
+              ) : tier === "PREMIUM" ? (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-purple-900/50 text-purple-300 text-[10px] font-semibold leading-none uppercase tracking-wider">{tier}</span>
+              ) : (
                 <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-300 text-[10px] font-semibold leading-none uppercase tracking-wider">{tier}</span>
               )}
             </div>
             {email && <div className="text-xs text-gray-500 truncate mt-0.5">{email}</div>}
           </div>
           <div className="border-t border-gray-800 my-1" />
+          {(tier === "PRO" || tier === "PREMIUM") && (
+            <a
+              href="/history"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-colors"
+            >
+              Interview history
+            </a>
+          )}
           <a
             href="/billing"
             onClick={() => setIsOpen(false)}

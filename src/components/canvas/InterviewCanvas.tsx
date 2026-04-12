@@ -5,6 +5,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { CUSTOM_SHAPE_UTILS } from "./shapes";
 import { VendorToolbar } from "./toolbar/VendorToolbar";
 import { CanvasHintOverlay } from "./hints/CanvasHintOverlay";
+import { ExportButton } from "../session/ExportButton";
 import { parseCanvasToGraph, hasGraphChanged } from "@/lib/graph-parser";
 import { SemanticGraph } from "@/types";
 
@@ -200,20 +201,24 @@ export function InterviewCanvas({
   initialSnapshot,
 }: Props) {
   return (
-    <div className="w-full h-full relative" data-canvas-container>
-      <Tldraw
-        shapeUtils={CUSTOM_SHAPE_UTILS}
-        components={TLDRAW_COMPONENT_OVERRIDES}
-        snapshot={initialSnapshot ?? undefined}
-      >
-        <VendorToolbar />
-        <CanvasKeyboardShortcuts />
-        <CanvasWatcher
-          onGraphChange={onGraphChange}
-          onCanvasRecordsChange={onCanvasRecordsChange}
-          onSnapshotChange={onSnapshotChange}
-        />
-      </Tldraw>
+    <div className="relative h-full w-full" data-canvas-container>
+      <div className="h-full w-full" style={{ background: "#0a0a0a" }}>
+        <Tldraw
+          shapeUtils={CUSTOM_SHAPE_UTILS}
+          components={TLDRAW_COMPONENT_OVERRIDES}
+          snapshot={initialSnapshot ?? undefined}
+          inferDarkMode={true}
+        >
+          <VendorToolbar />
+          <ExportButton />
+          <CanvasKeyboardShortcuts />
+          <CanvasWatcher
+            onGraphChange={onGraphChange}
+            onCanvasRecordsChange={onCanvasRecordsChange}
+            onSnapshotChange={onSnapshotChange}
+          />
+        </Tldraw>
+      </div>
       <CanvasHintOverlay />
     </div>
   );

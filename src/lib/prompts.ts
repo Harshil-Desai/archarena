@@ -292,6 +292,28 @@ export const PROMPTS: DesignPrompt[] = [
     ],
     timeLimit: 3000,
   },
+  {
+    id: "typeahead-search",
+    title: "Typeahead Search",
+    description:
+      "Design the autocomplete system behind a search bar. " +
+      "Return ranked suggestions in under 100ms as the user types, " +
+      "at the scale of Google or Amazon.",
+    difficulty: "medium",
+    category: "infra",
+    followUpHints: [
+      "Trie vs Inverted Index for prefix matching",
+      "Top-K tracking with frequency decay",
+      "Client-side debouncing and caching",
+    ],
+    scoringCriteria: [
+      "Data structure choice for prefix queries",
+      "Personalization vs global ranking",
+      "Cache hierarchy (CDN → service → DB)",
+      "Handling trending queries and freshness",
+    ],
+    timeLimit: 2100,
+  },
 ];
 
 export const FREE_PROMPT_COUNT = LIMITS.free.promptCount;

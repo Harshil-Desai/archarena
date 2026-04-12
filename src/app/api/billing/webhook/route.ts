@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
   const data = payload.data?.attributes
   const userId = payload.meta?.custom_data?.user_id
 
-  console.log(`[webhook] Event: ${eventName}, userId: ${userId}`)
+  console.warn(`[webhook] Event: ${eventName}, userId: ${userId}`)
 
   if (!userId) {
     console.error("[webhook] No user_id in custom_data")
@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
       }
 
       default: {
-        console.log(`[webhook] Unhandled event: ${eventName}`)
+        console.warn(`[webhook] Unhandled event: ${eventName}`)
       }
     }
   } catch (error) {

@@ -1,42 +1,27 @@
 "use client";
 
 import { useSessionStore } from "@/store/session";
-import { useEffect, useRef } from "react";
 
 export function NotesPanel() {
   const notes = useSessionStore((s) => s.notes);
   const setNotes = useSessionStore((s) => s.setNotes);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Auto-resize textarea
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const resize = () => {
-      textarea.style.height = "auto";
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    };
-
-    resize();
-    textarea.addEventListener("input", resize);
-    return () => textarea.removeEventListener("input", resize);
-  }, []);
 
   return (
-    <div className="h-full flex flex-col bg-gray-900 border border-gray-800 rounded-xl overflow-hidden shadow-sm">
-      <div className="px-4 py-2 border-b border-gray-800 bg-gray-900/50 flex items-center justify-between">
-        <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          Working Notes
+    <div className="flex h-full min-h-0 flex-col bg-transparent">
+      <div className="flex h-11 shrink-0 items-center justify-between border-b border-gray-800 px-4">
+        <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
+          Notes
+        </span>
+        <span className="text-[10px] text-gray-600">
+          Assumptions · tradeoffs · risks
         </span>
       </div>
-      <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+      <div className="min-h-0 flex-1">
         <textarea
-          ref={textareaRef}
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Write assumptions, capacity math, tradeoffs, and open risks."
-          className="w-full h-full bg-transparent text-gray-200 text-sm outline-none resize-none placeholder:text-gray-600 leading-relaxed min-h-[120px]"
+          placeholder="Scale assumptions, tradeoffs, open risks..."
+          className="w-full h-full resize-none bg-transparent p-4 text-sm text-gray-300 outline-none placeholder:text-gray-700"
         />
       </div>
     </div>

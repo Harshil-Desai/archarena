@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
   let stream: ReadableStream
   try {
     stream = await createScoringStream(scoringPrompt, provider)
-  } catch (streamInitError: any) {
+  } catch (streamInitError: any) { // any: error shape varies between Anthropic and Gemini SDKs
     const status = streamInitError?.status ?? 500
     if (status === 429) {
       return NextResponse.json(

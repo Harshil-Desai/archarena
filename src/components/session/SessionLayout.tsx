@@ -115,14 +115,14 @@ export function SessionLayout({
         </div>
       </header>
 
-      <main className="flex-1 flex overflow-hidden">
+      <main className="flex flex-1 overflow-hidden">
         <div className="flex-[3] overflow-hidden">{left}</div>
 
-        <div className="flex-[2] flex flex-col border-l border-gray-800 overflow-hidden">
-          <div className="flex-1 overflow-hidden border-b border-gray-800">
+        <div className="flex-[2] flex min-h-0 flex-col overflow-hidden border-l border-gray-700/50 bg-gray-900/50">
+          <div className="flex-[1] min-h-0 overflow-hidden border-b border-gray-800">
             {notes}
           </div>
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-[2] min-h-0 overflow-hidden">
             {chat}
           </div>
         </div>

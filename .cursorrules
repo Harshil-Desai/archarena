@@ -57,13 +57,13 @@
   `NEXT_PUBLIC_` prefix. Client vars must have it. Never mix these.
 
 # Payments (LemonSqueezy)
-# - initLemonSqueezy() must be called before any LS API call
-# - Webhook secret lives in LEMONSQUEEZY_WEBHOOK_SECRET
-# - Never use NEXT_PUBLIC_ vars for secret operations
-# - Variant IDs are public — safe for NEXT_PUBLIC_ prefix
-# - Always verify webhook signature before processing
-# - Tier changes ONLY happen via verified webhooks, never
-#   via direct API calls from the client
+- initLemonSqueezy() must be called before any LS API call
+ - Webhook secret lives in LEMONSQUEEZY_WEBHOOK_SECRET
+ - Never use NEXT_PUBLIC_ vars for secret operations
+ - Variant IDs are public — safe for NEXT_PUBLIC_ prefix
+ - Always verify webhook signature before processing
+ - Tier changes ONLY happen via verified webhooks, never
+   via direct API calls from the client
 # LemonSqueezy webhook setup:
 # 1. Go to LemonSqueezy dashboard → Settings → Webhooks
 # 2. Add endpoint: https://yourdomain.com/api/billing/webhook

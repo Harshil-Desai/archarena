@@ -62,7 +62,7 @@ const TIERS: Tier[] = [
     ctaText: "Start Free",
     features: [
       { name: "5 Preset prompts", included: true },
-      { name: "5 interviewer nudges per session", included: true },
+      { name: "5 interviewer hints per session", included: true },
       { name: "1 interviewer mode", included: true },
       { name: "0 Sessions saved", included: false },
       { name: "Session export", included: false },
@@ -79,7 +79,7 @@ const TIERS: Tier[] = [
     isPopular: true,
     features: [
       { name: "15 Preset prompts", included: true },
-      { name: "Unlimited interviewer nudges", included: true },
+      { name: "Unlimited interviewer hints", included: true },
       { name: "3 interviewer modes", included: true },
       { name: "10 Sessions saved", included: true },
       { name: "Session export", included: true },
@@ -95,7 +95,7 @@ const TIERS: Tier[] = [
     ctaText: "Upgrade to Premium",
     features: [
       { name: "15 + custom preset prompts", included: true },
-      { name: "Unlimited interviewer nudges", included: true },
+      { name: "Unlimited interviewer hints", included: true },
       { name: "3 + custom interviewer modes", included: true },
       { name: "Unlimited sessions saved", included: true },
       { name: "Session export", included: true },

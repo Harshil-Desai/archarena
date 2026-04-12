@@ -6,7 +6,6 @@ import { useSessionStore } from "@/store/session";
 import type { SemanticGraph } from "@/types";
 import { LIMITS } from "@/lib/limits";
 import { useCanvasValidation } from "../canvas/validation/useCanvasValidation";
-import { ChatInput } from "./ChatInput";
 import { ChatMessage } from "./ChatMessage";
 import { HintBubble } from "./HintBubble";
 
@@ -14,16 +13,7 @@ interface ChatPanelProps {
   graph: SemanticGraph | null;
 }
 
-const EMPTY_GRAPH: SemanticGraph = {
-  nodes: [],
-  edges: [],
-  annotations: [],
-  unlabeledEdgeCount: 0,
-  unlabeledGenericCount: 0,
-  isValid: true,
-};
-
-const amberUpgradeNudgeClasses =
+const amberUpgradeHintClasses =
   "bg-amber-900/30 border border-amber-600/50 rounded-lg p-3 text-amber-200 text-sm";
 const upgradeLinkClasses =
   "bg-amber-600 text-white px-3 py-1 rounded text-xs w-full mt-2 hover:opacity-90 transition-opacity";
@@ -33,35 +23,28 @@ export function ChatPanel({ graph }: ChatPanelProps) {
   const activePrompt = useSessionStore((s) => s.activePrompt);
   const hints = useSessionStore((s) => s.hints);
   const hintsUsed = useSessionStore((s) => s.hintsUsed);
-  const unreadHintCount = useSessionStore((s) => s.unreadHintCount);
   const isAiThinking = useSessionStore((s) => s.isAiThinking);
   const messages = useSessionStore((s) => s.messages);
   const setAiThinking = useSessionStore((s) => s.setAiThinking);
   const addHint = useSessionStore((s) => s.addHint);
-  const addMessage = useSessionStore((s) => s.addMessage);
-  const updateLastMessage = useSessionStore((s) => s.updateLastMessage);
   const markAllHintsRead = useSessionStore((s) => s.markAllHintsRead);
-  const incrementHintsUsed = useSessionStore((s) => s.incrementHintsUsed);
   const syncHintsFromServer = useSessionStore((s) => s.syncHintsFromServer);
   const llmProvider = useSessionStore((s) => s.llmProvider);
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const [showHints, setShowHints] = useState(false);
   const [hintError, setHintError] = useState<string | null>(null);
-  const [chatError, setChatError] = useState<string | null>(null);
-  const [draft, setDraft] = useState("");
 
   const validation = useCanvasValidation(graph);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isAiThinking, showHints]);
+  }, [messages, isAiThinking, hints]);
 
   useEffect(() => {
-    if (showHints && unreadHintCount > 0) {
+    if (hints.length > 0) {
       markAllHintsRead();
     }
-  }, [markAllHintsRead, showHints, unreadHintCount]);
+  }, [hints, markAllHintsRead]);
 
   const askHint = async () => {
     if (!sessionId) return;
@@ -70,9 +53,7 @@ export function ChatPanel({ graph }: ChatPanelProps) {
     if (hintsUsed >= LIMITS.free.aiHintsPerSession) return;
 
     setHintError(null);
-    setChatError(null);
     setAiThinking(true);
-    incrementHintsUsed();
 
     try {
       const res = await fetch("/api/ai/hint", {
@@ -97,7 +78,7 @@ export function ChatPanel({ graph }: ChatPanelProps) {
               ? errorData.hintsUsed
               : LIMITS.free.aiHintsPerSession
           );
-          setHintError("Free plan is out of nudges. Upgrade for more.");
+          setHintError("Free plan is out of hints. Upgrade for more.");
           return;
         }
 
@@ -120,103 +101,12 @@ export function ChatPanel({ graph }: ChatPanelProps) {
         triggeredAt: Date.now(),
         isRead: false,
       });
-      setShowHints(true);
     } catch (err) {
       setHintError(
         err instanceof Error
           ? err.message
-          : "Could not get a nudge. Try again."
+          : "Could not get a hint. Try again."
       );
-    } finally {
-      setAiThinking(false);
-    }
-  };
-
-  const sendChatMessage = async () => {
-    if (!sessionId || isAiThinking) return;
-
-    const content = draft.trim();
-    if (!content) return;
-
-    setDraft("");
-    setHintError(null);
-    setChatError(null);
-    setAiThinking(true);
-
-    const userMessage = {
-      id: nanoid(),
-      role: "user" as const,
-      content,
-      timestamp: Date.now(),
-    };
-
-    const pendingAssistantMessage = {
-      id: nanoid(),
-      role: "ai" as const,
-      content: "Thinking...",
-      timestamp: Date.now(),
-      model: llmProvider === "gemini" ? "flash" as const : "haiku" as const,
-    };
-
-    addMessage(userMessage);
-    addMessage(pendingAssistantMessage);
-
-    try {
-      const res = await fetch(`/api/session/${sessionId}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: content,
-          graph: graph ?? EMPTY_GRAPH,
-          llmProvider,
-        }),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        throw new Error(data.message ?? "Chat request failed");
-      }
-
-      const authoritativeHistory = Array.isArray(data.chatHistory)
-        ? data.chatHistory
-        : typeof data.reply === "string"
-          ? [
-              ...messages,
-              userMessage,
-              {
-                ...pendingAssistantMessage,
-                content: data.reply.trim(),
-              },
-            ]
-          : null;
-
-      if (!authoritativeHistory) {
-        throw new Error("The AI returned an invalid chat response.");
-      }
-
-      useSessionStore.setState({ messages: authoritativeHistory });
-
-      const persistRes = await fetch(`/api/session/${sessionId}/chat`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chatHistory: authoritativeHistory,
-        }),
-      });
-
-      if (!persistRes.ok) {
-        throw new Error("Reply generated, but chat history failed to save.");
-      }
-
-    } catch (err) {
-      const fallbackMessage =
-        err instanceof Error
-          ? err.message
-          : "Something went wrong sending your message. Try again.";
-
-      updateLastMessage(fallbackMessage);
-      setChatError(fallbackMessage);
     } finally {
       setAiThinking(false);
     }
@@ -225,57 +115,37 @@ export function ChatPanel({ graph }: ChatPanelProps) {
   const hintsRemaining = LIMITS.free.aiHintsPerSession - hintsUsed;
 
   return (
-    <section className="flex h-full flex-col bg-gray-950 pt-3">
-      <div className="flex shrink-0 items-center justify-between border-b border-gray-800 px-4 pb-3">
-        <h2 className="font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wider text-gray-200">
+    <section className="flex h-full min-h-0 flex-col bg-transparent">
+      <div className="flex h-11 shrink-0 items-center justify-between border-b border-gray-800 px-4">
+        <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
           Interviewer
-        </h2>
-        <div className="flex items-center gap-2">
-          {hints.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowHints((current) => !current)}
-              className="rounded border border-gray-700 bg-gray-900 px-2 py-0.5 text-[11px] text-gray-300 transition-colors hover:border-gray-600 hover:text-gray-100"
-            >
-              Nudges {hints.length}
-              {unreadHintCount > 0 && (
-                <span className="ml-1 text-amber-400">({unreadHintCount} new)</span>
-              )}
-            </button>
-          )}
-          <div className="rounded bg-gray-800 px-2 py-0.5 font-mono text-[11px] uppercase tracking-wide text-gray-400">
-            {llmProvider === "anthropic" ? "claude haiku" : "gemini flash"}
-          </div>
+        </span>
+        <div className="rounded-full bg-gray-800 px-2 py-0.5 font-mono text-[10px] text-gray-500">
+          {llmProvider === "anthropic" ? "CLAUDE HAIKU" : "GEMINI FLASH"}
         </div>
       </div>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        {messages.length === 0 ? (
+      <div className="flex-1 min-h-0 space-y-4 overflow-y-auto p-4">
+        {messages.length === 0 && hints.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-800 bg-gray-950/40 p-4 text-sm text-gray-400">
-            Ask about weak spots, capacity limits, retries, or tradeoffs in the diagram on the board.
+            Request a hint when you want the interviewer to push on bottlenecks,
+            tradeoffs, and weak spots in the current diagram.
           </div>
-        ) : (
-          messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
-          ))
-        )}
-        <div ref={bottomRef} />
-      </div>
+        ) : null}
 
-      <div className="shrink-0 border-t border-gray-800 bg-gray-900/50 p-4">
-        {showHints && hints.length > 0 && (
-          <div className="mb-3 rounded-lg border border-gray-800 bg-gray-950/70 p-3">
+        {messages.map((message) => (
+          <ChatMessage key={message.id} message={message} />
+        ))}
+
+        {hints.length > 0 && (
+          <div className="rounded-lg border border-gray-800 bg-gray-950/70 p-3">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Interviewer nudges
+                Interviewer hints
               </p>
-              <button
-                type="button"
-                onClick={() => setShowHints(false)}
-                className="text-[11px] text-gray-500 hover:text-gray-300"
-              >
-                Hide
-              </button>
+              <span className="text-[10px] text-gray-600">
+                {hints.length} total
+              </span>
             </div>
             <div className="space-y-2">
               {[...hints].reverse().map((hint) => (
@@ -284,29 +154,22 @@ export function ChatPanel({ graph }: ChatPanelProps) {
             </div>
           </div>
         )}
+        <div ref={bottomRef} />
+      </div>
 
-        {chatError && (
-          <p className="mb-2 text-xs text-red-400">{chatError}</p>
-        )}
+      <div className="shrink-0 border-t border-gray-800 bg-gray-900/30 p-4">
         {hintError && (
           <p className="mb-2 text-xs text-amber-400">{hintError}</p>
         )}
-
-        <ChatInput
-          value={draft}
-          onChange={setDraft}
-          onSend={sendChatMessage}
-          disabled={isAiThinking}
-        />
+        {!validation.canRequestHint && hintsRemaining > 0 && (
+          <p className="mb-2 text-xs text-amber-400">
+            {validation.reason}
+          </p>
+        )}
 
         <div className="mt-3">
           {hintsRemaining > 0 ? (
             <>
-              {!validation.canRequestHint && (
-                <p className="mb-2 text-xs text-amber-400">
-                  {validation.reason}
-                </p>
-              )}
               <button
                 type="button"
                 onClick={askHint}
@@ -324,7 +187,7 @@ export function ChatPanel({ graph }: ChatPanelProps) {
                     Reviewing...
                   </span>
                 ) : (
-                  "Ask for a nudge"
+                  "Ask for a hint"
                 )}
               </button>
               <div
@@ -336,11 +199,11 @@ export function ChatPanel({ graph }: ChatPanelProps) {
               </div>
             </>
           ) : (
-            <div className={amberUpgradeNudgeClasses}>
+            <div className={amberUpgradeHintClasses}>
               <div className="mb-1 font-semibold">
-                Free plan has no nudges left.
+                Free plan has no hints left.
               </div>
-              <div className="mb-3">Upgrade if you want unlimited interviewer nudges.</div>
+              <div className="mb-3">Upgrade if you want unlimited interviewer hints.</div>
               <a href="/billing" className={upgradeLinkClasses}>
                 Upgrade to Pro →
               </a>

@@ -2,12 +2,20 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 
 export default function BillingSuccessPage() {
   const router = useRouter()
+  const { update } = useSession()
   const [countdown, setCountdown] = useState(5)
 
   useEffect(() => {
+    // Force NextAuth to refresh the session token from DB.
+    // The webhook has already updated the user's tier in Postgres,
+    // but the client session token is stale. Calling update() re-runs
+    // the session callback in auth.ts with the fresh DB user object.
+    update()
+
     const interval = window.setInterval(() => {
       setCountdown((currentCountdown) => {
         if (currentCountdown <= 1) {
@@ -21,7 +29,8 @@ export default function BillingSuccessPage() {
     }, 1000)
 
     return () => window.clearInterval(interval)
-  }, [router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-950">

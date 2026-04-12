@@ -258,7 +258,7 @@ export async function generateAnthropicHint(
 ): Promise<string> {
   const message = await anthropicClient.messages.create({
     model: MODEL_MAP.haiku,
-    max_tokens: 120,
+    max_tokens: 150,
     stop_sequences: ['\n\n'],
     messages: [{ role: "user", content: buildHintPrompt(prompt, graph, history) }],
   });
@@ -294,7 +294,7 @@ export async function generateGeminiHint(
 
   const result = await model.generateContent({
     contents: [{ role: "user", parts: [{ text: buildHintPrompt(prompt, graph, history) }] }],
-    generationConfig: { maxOutputTokens: 1000 },
+    generationConfig: { maxOutputTokens: 150 },
   });
 
   return result.response.text();
