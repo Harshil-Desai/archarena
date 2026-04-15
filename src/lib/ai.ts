@@ -64,7 +64,17 @@ export function truncateToTokenBudget(
   return text.slice(0, maxChars).trimEnd() + '...'
 }
 
-const anthropicClient = new Anthropic();
+// Lazy-init Anthropic client — mirrors Gemini pattern so missing key
+// is caught at call time (not import time), allowing graceful error handling.
+let _anthropicClient: Anthropic | null = null
+function getAnthropicClient(): Anthropic {
+  if (!_anthropicClient) {
+    const key = process.env.ANTHROPIC_API_KEY
+    if (!key) throw new Error("ANTHROPIC_API_KEY is not set")
+    _anthropicClient = new Anthropic({ apiKey: key })
+  }
+  return _anthropicClient
+}
 
 // Lazy-init Gemini client (only when env var is set)
 let _geminiClient: GoogleGenerativeAI | null = null;
@@ -318,16 +328,18 @@ export async function generateAnthropicHint(
   graph: SemanticGraph,
   history: ChatMessage[] = []
 ): Promise<string> {
-  const message = await anthropicClient.messages.create({
+  const message = await getAnthropicClient().messages.create({
     model: MODEL_MAP.haiku,
     max_tokens: 150,
     stop_sequences: ['\n\n'],
     messages: [{ role: "user", content: buildHintPrompt(prompt, graph, history) }],
   });
 
-  // safe cast — Anthropic always returns text for non-tool messages
-  const hint = (message.content[0] as { type: "text"; text: string }).text;
-  return hint;
+  const block = message.content[0]
+  if (!block || block.type !== "text") {
+    throw new Error(`Unexpected Anthropic response block type: ${block?.type ?? "empty"}`)
+  }
+  return block.text
 }
 
 export async function generateAnthropicChatReply(
@@ -335,13 +347,17 @@ export async function generateAnthropicChatReply(
   graph: SemanticGraph,
   history: ChatMessage[]
 ): Promise<string> {
-  const message = await anthropicClient.messages.create({
+  const message = await getAnthropicClient().messages.create({
     model: MODEL_MAP.haiku,
     max_tokens: 220,
     messages: [{ role: "user", content: buildChatPrompt(prompt, graph, history) }],
   })
 
-  return (message.content[0] as { type: "text"; text: string }).text.trim()
+  const block = message.content[0]
+  if (!block || block.type !== "text") {
+    throw new Error(`Unexpected Anthropic response block type: ${block?.type ?? "empty"}`)
+  }
+  return block.text.trim()
 }
 
 // ── Gemini implementations ─────────────────────────────────────────
@@ -384,7 +400,7 @@ export async function createScoringStream(
 ): Promise<ReadableStream> {
   if (provider === "anthropic") {
     // Anthropic stream initializes lazily — pre-flight it
-    const stream = anthropicClient.messages.stream({
+    const stream = getAnthropicClient().messages.stream({
       model: MODEL_MAP.sonnet,
       max_tokens: 1000,
       messages: [{ role: "user", content: promptText }],
@@ -419,7 +435,7 @@ export async function createScoringStream(
     // errors throw synchronously before we return the ReadableStream
     const result = await model.generateContentStream({
       contents: [{ role: "user", parts: [{ text: promptText }] }],
-      generationConfig: { maxOutputTokens: 10000 },
+      generationConfig: { maxOutputTokens: 1500 },
     });
 
     return new ReadableStream({
