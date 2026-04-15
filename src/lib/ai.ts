@@ -51,6 +51,19 @@ export function truncateHistoryForAI(history: ChatMessage[]): ChatMessage[] {
     }))
 }
 
+/**
+ * Truncate text to approximate token budget.
+ * Uses 4 chars/token heuristic for English text.
+ */
+export function truncateToTokenBudget(
+  text: string,
+  maxTokens: number = LIMITS_AI.MAX_VOICE_TOKENS
+): string {
+  const maxChars = maxTokens * 4
+  if (text.length <= maxChars) return text
+  return text.slice(0, maxChars).trimEnd() + '...'
+}
+
 const anthropicClient = new Anthropic();
 
 // Lazy-init Gemini client (only when env var is set)

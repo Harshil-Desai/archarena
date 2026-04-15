@@ -8,7 +8,19 @@ import type { TLStoreSnapshot } from "@tldraw/tldraw";
 import type { ChatMessage, ScoreResult, SemanticGraph } from "@/types";
 import { LIMITS } from "@/lib/limits";
 import { useSessionStore } from "@/store/session";
-import { InterviewCanvas } from "@/components/canvas/InterviewCanvas";
+import dynamic from "next/dynamic";
+
+const InterviewCanvas = dynamic(
+  () => import("@/components/canvas/InterviewCanvas").then(m => ({ default: m.InterviewCanvas })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full bg-gray-950">
+        <div className="text-gray-400 text-sm">Loading canvas...</div>
+      </div>
+    ),
+  }
+);
 import {
   clearSessionLocally,
   loadSessionLocally,
