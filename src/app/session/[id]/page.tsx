@@ -178,8 +178,19 @@ export default function SessionPage({
       setTimeout(() => setShowResumeToast(false), 3000)
     }
 
-    setShowToast(true)
-    setTimeout(() => setShowToast(false), 3000)
+    // Only show recovery toast when there is actually something to recover —
+    // prevents a misleading "Recovered local draft" on brand-new sessions.
+    if (
+      mergedHintsUsed > 0 ||
+      mergedScoresUsed > 0 ||
+      restoredGraph ||
+      restoredHints.length > 0 ||
+      restoredNotes.length > 0 ||
+      mergedHistory.length > 0
+    ) {
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    }
   }, [syncFromServer])
 
   // Clear timer on unmount
@@ -200,17 +211,18 @@ export default function SessionPage({
   useEffect(() => {
     if (!isSessionHydrated || !activePrompt || authStatus !== "authenticated") return;
 
-    const userTier = (authSession?.user as { tier?: string } | undefined)?.tier ?? "FREE";
-    if (userTier !== "FREE") return; // PRO / PREMIUM: no restriction
+    const checkTierGuard = async () => {
+      const userTier = (authSession?.user as { tier?: string } | undefined)?.tier ?? "FREE";
+      if (userTier !== "FREE") return; // PRO / PREMIUM: no restriction
 
-    const { PROMPTS, FREE_PROMPT_COUNT } = require("@/lib/prompts") as {
-      PROMPTS: { id: string }[];
-      FREE_PROMPT_COUNT: number;
+      const { PROMPTS, FREE_PROMPT_COUNT } = await import("@/lib/prompts");
+      const freePromptIds = PROMPTS.slice(0, FREE_PROMPT_COUNT).map((p: { id: string }) => p.id);
+      if (!freePromptIds.includes(activePrompt.id)) {
+        router.replace("/");
+      }
     };
-    const freePromptIds = PROMPTS.slice(0, FREE_PROMPT_COUNT).map((p) => p.id);
-    if (!freePromptIds.includes(activePrompt.id)) {
-      router.replace("/");
-    }
+
+    checkTierGuard();
   }, [activePrompt, authSession, authStatus, isSessionHydrated, router]);
 
   // 2. On mount (once authenticated): call /api/session/start
