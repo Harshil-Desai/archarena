@@ -32,8 +32,8 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. AI endpoints use appropriate models (Haiku for hints, Sonnet for scoring) with token limits enforced
 **Plans:** 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Fix save storms, Gemini model bug, atomic daily limits, hasGraphChanged optimization
-- [ ] 01-02-PLAN.md — Dynamic tldraw import, token budget utility, AI route verification
+- [x] 01-01-PLAN.md — Fix save storms, Gemini model bug, atomic daily limits, hasGraphChanged optimization
+- [x] 01-02-PLAN.md — Dynamic tldraw import, token budget utility, AI route verification
 
 ### Phase 2: Dashboard & Session Management
 **Goal**: Users land on a useful home page after login and can navigate their session history
