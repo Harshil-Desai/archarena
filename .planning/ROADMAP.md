@@ -30,7 +30,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User receives hint responses within 10 seconds of requesting one
   4. Canvas save events do not exhaust connections (debounced, no save storms)
   5. AI endpoints use appropriate models (Haiku for hints, Sonnet for scoring) with token limits enforced
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Fix save storms, Gemini model bug, atomic daily limits, hasGraphChanged optimization
+- [ ] 01-02-PLAN.md — Dynamic tldraw import, token budget utility, AI route verification
 
 ### Phase 2: Dashboard & Session Management
 **Goal**: Users land on a useful home page after login and can navigate their session history
@@ -88,7 +91,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Stability & Performance | 0/TBD | Not started | - |
+| 1. Stability & Performance | 0/2 | Not started | - |
 | 2. Dashboard & Session Management | 0/TBD | Not started | - |
 | 3. Enhanced Interview Experience | 0/TBD | Not started | - |
 | 4. Analytics & Progress Tracking | 0/TBD | Not started | - |
