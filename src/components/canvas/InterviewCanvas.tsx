@@ -16,7 +16,7 @@ interface Props {
   initialSnapshot?: TLStoreSnapshot | null;
 }
 
-const DEBOUNCE_MS = 1500;
+const DEBOUNCE_MS = 2000;
 
 /**
  * Null out all irrelevant tldraw UI chrome.
@@ -93,15 +93,12 @@ function CanvasWatcher({
     debounceRef.current = setTimeout(() => {
       const records = Object.values(editor.store.allRecords()) as TLRecord[];
       const graph = parseCanvasToGraph(records);
-      const snapshot = editor.getSnapshot().document;
 
-      onSnapshotChange?.(snapshot);
-
-      // Client-side diff — only propagate if something changed
+      // Client-side diff — only snapshot and propagate if something changed
       if (hasGraphChanged(lastGraphRef.current, graph)) {
         lastGraphRef.current = graph;
-        // Pass latest canvas records along with the semantic graph update.
-        // This is used for hint triggering.
+        const snapshot = editor.getSnapshot().document;
+        onSnapshotChange?.(snapshot);
         onCanvasRecordsChange?.(records);
         onGraphChange(graph);
       }

@@ -263,14 +263,18 @@ export default function SessionPage({
     startSession();
   }, [activePrompt, applyRecoveredSession, authStatus, resolvePrompt, router, urlSessionId]);
 
+  const saveInFlightRef = useRef(false);
+
   const scheduleCanvasSave = useCallback((snapshot: TLStoreSnapshot) => {
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
 
     autosaveTimerRef.current = setTimeout(async () => {
+      if (saveInFlightRef.current) return;
       const latestGraph = latestGraphRef.current;
 
       // Primary: save to DB
       if (sessionId) {
+        saveInFlightRef.current = true;
         try {
           const res = await fetch(`/api/session/${sessionId}/canvas`, {
             method: "PATCH",
@@ -298,9 +302,11 @@ export default function SessionPage({
           if (latestGraph) {
             setLastSentGraph(latestGraph);
           }
+        } finally {
+          saveInFlightRef.current = false;
         }
       }
-    }, 3000);
+    }, 5000);
   }, [activePrompt?.id, sessionId, setLastSentGraph, urlSessionId]);
 
   const onSnapshotChange = useCallback((snapshot: TLStoreSnapshot) => {
