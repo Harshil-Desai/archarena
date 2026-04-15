@@ -3,6 +3,54 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { DesignPrompt } from "./prompts";
 import { ChatMessage, SemanticGraph, AIModel, LlmProvider } from "@/types";
 
+// ── Input truncation limits (cost control) ─────────────────────────
+const LIMITS_AI = {
+  maxNodes: 20,
+  maxEdges: 30,
+  maxAnnotationLength: 200,
+  maxAnnotations: 5,
+  maxLabelLength: 60,
+  maxEdgeLabelLength: 80,
+  maxHistoryMessages: 6,
+  maxHistoryMessageLength: 300,
+  MAX_VOICE_TOKENS: 200,
+} as const
+
+export function truncateGraphForAI(graph: SemanticGraph): SemanticGraph {
+  return {
+    nodes: graph.nodes
+      .slice(0, LIMITS_AI.maxNodes)
+      .map(n => ({
+        ...n,
+        label: n.label.slice(0, LIMITS_AI.maxLabelLength),
+      })),
+    edges: graph.edges
+      .slice(0, LIMITS_AI.maxEdges)
+      .map(e => ({
+        ...e,
+        label: e.label.slice(0, LIMITS_AI.maxEdgeLabelLength),
+      })),
+    annotations: graph.annotations
+      .slice(0, LIMITS_AI.maxAnnotations)
+      .map(a => ({
+        ...a,
+        text: a.text.slice(0, LIMITS_AI.maxAnnotationLength),
+      })),
+    unlabeledEdgeCount: graph.unlabeledEdgeCount,
+    unlabeledGenericCount: graph.unlabeledGenericCount,
+    isValid: graph.isValid,
+  }
+}
+
+export function truncateHistoryForAI(history: ChatMessage[]): ChatMessage[] {
+  return history
+    .slice(-LIMITS_AI.maxHistoryMessages)
+    .map(m => ({
+      ...m,
+      content: m.content.slice(0, LIMITS_AI.maxHistoryMessageLength),
+    }))
+}
+
 const anthropicClient = new Anthropic();
 
 // Lazy-init Gemini client (only when env var is set)
@@ -32,7 +80,7 @@ export const MODEL_MAP: Record<Exclude<AIModel, "flash">, string> = {
 
 export const GEMINI_MODEL_MAP = {
   flash: "gemini-2.5-flash",   // background hints, chat
-  pro: "gemini-2.5-flash",       // final scoring
+  pro: "gemini-2.5-pro",          // final scoring
 } as const;
 
 // ── Prompt builders (model-agnostic) ───────────────────────────────
@@ -126,12 +174,13 @@ export function buildHintPrompt(
   graph: SemanticGraph,
   history: ChatMessage[] = []
 ): string {
-  const previousHints = history
+  const safeHistory = truncateHistoryForAI(history)
+  const previousHints = safeHistory
     .filter((m) => m.role === 'ai')
     .map((m) => `- ${m.content}`)
     .join('\n')
 
-  const canvasContext = formatGraphForPrompt(graph);
+  const canvasContext = formatGraphForPrompt(truncateGraphForAI(graph));
 
   return `You are a senior staff engineer at a top-tier tech company
 conducting a system design interview. You are watching the candidate
@@ -178,8 +227,8 @@ export function buildScoringPrompt(
   graph: SemanticGraph,
   history: ChatMessage[]
 ): string {
-  const canvasContext = formatGraphForPrompt(graph);
-  const historyContext = formatHistoryForPrompt(history);
+  const canvasContext = formatGraphForPrompt(truncateGraphForAI(graph));
+  const historyContext = formatHistoryForPrompt(truncateHistoryForAI(history));
 
   return `You are a senior staff engineer scoring a system design interview.
 
@@ -220,8 +269,8 @@ export function buildChatPrompt(
   graph: SemanticGraph,
   history: ChatMessage[]
 ): string {
-  const canvasContext = formatGraphForPrompt(graph)
-  const historyContext = formatHistoryForPrompt(history)
+  const canvasContext = formatGraphForPrompt(truncateGraphForAI(graph))
+  const historyContext = formatHistoryForPrompt(truncateHistoryForAI(history))
 
   return `You are a senior staff engineer conducting a live system design interview.
 

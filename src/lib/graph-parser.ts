@@ -277,5 +277,10 @@ export function hasGraphChanged(
   next: SemanticGraph
 ): boolean {
   if (!prev) return true
-  return JSON.stringify(prev) !== JSON.stringify(next)
+  if (prev.nodes.length !== next.nodes.length) return true
+  if (prev.edges.length !== next.edges.length) return true
+  if (prev.annotations.length !== next.annotations.length) return true
+  if (prev.nodes.some((n, i) => n.id !== next.nodes[i]?.id || n.label !== next.nodes[i]?.label)) return true
+  if (prev.edges.some((e, i) => e.from !== next.edges[i]?.from || e.to !== next.edges[i]?.to || e.label !== next.edges[i]?.label)) return true
+  return false
 }
