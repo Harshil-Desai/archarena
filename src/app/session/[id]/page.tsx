@@ -371,7 +371,9 @@ export default function SessionPage({
     setIsScorePanelOpen(true);
     if (isScoring) return;
 
-    if (scoresUsed >= LIMITS.free.scoresPerSession) return;
+    // Server enforces per-tier limits authoritatively and returns
+    // { error: "free_limit_reached" } when the cap is hit — do not
+    // gate here with LIMITS.free which silently blocks PRO/PREMIUM users.
     if (!activePrompt || !latestGraphRef.current) return;
 
     setScoring(true);
