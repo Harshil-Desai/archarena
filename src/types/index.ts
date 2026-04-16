@@ -90,3 +90,15 @@ export interface ChatMessage {
   timestamp: number;
   model?: AIModel;
 }
+
+// Session history — used by dashboard and session list components
+export interface HistorySession {
+  id: string
+  promptId: string
+  hintsUsed: number
+  scoresUsed: number
+  scoreResult: unknown  // Use getScore() from @/lib/utils for safe access
+  status: "ACTIVE" | "SCORED" | "ABANDONED"
+  createdAt: string
+  updatedAt: string
+}
