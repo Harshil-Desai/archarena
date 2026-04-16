@@ -47,7 +47,7 @@ Plans:
   5. All pages render correctly on mobile, tablet, and desktop
 **Plans:** 3 plans
 Plans:
-- [ ] 02-01-PLAN.md — Shared utilities (src/lib/utils.ts), HistorySession type, /api/history pro-gate removal
+- [x] 02-01-PLAN.md — Shared utilities (src/lib/utils.ts), HistorySession type, /api/history pro-gate removal
 - [ ] 02-02-PLAN.md — Dashboard page (SessionCard, StatsBar components, /dashboard route)
 - [ ] 02-03-PLAN.md — Auth redirect on /, /history redirect, MobileNotice, canvas controls verification
 
