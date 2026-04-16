@@ -464,6 +464,10 @@ function PromptCard({
         visible ? "animate-fade-in" : "opacity-0",
       ].join(" ")}
       style={visible ? { animationDelay: `${index * 80}ms` } : undefined}
+      onClick={interactive ? onClick : undefined}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onKeyDown={interactive ? (e) => { if (e.key === "Enter" || e.key === " ") onClick(); } : undefined}
     >
       {/* Locked overlay */}
       {isLocked && (

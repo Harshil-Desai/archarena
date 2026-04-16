@@ -82,6 +82,16 @@ export function ChatPanel({ graph }: ChatPanelProps) {
           return;
         }
 
+        if (errorData?.error === "daily_limit_reached") {
+          addHint({
+            id: nanoid(),
+            content: "You've reached the daily hint limit. Come back tomorrow, or upgrade to Pro for a higher daily limit.",
+            triggeredAt: Date.now(),
+            isRead: false,
+          })
+          return;
+        }
+
         if (typeof errorData?.hintsUsed === "number") {
           syncHintsFromServer(errorData.hintsUsed);
         }

@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Skill(gsd:map-codebase)",
+      "Bash(wc -l \"E:/Projects/archarena/.planning/codebase\"/*.md)",
+      "Bash(grep -E '\\(sk-[a-zA-Z0-9]{20,}|sk_live_[a-zA-Z0-9]+|sk_test_[a-zA-Z0-9]+|ghp_[a-zA-Z0-9]{36}|gho_[a-zA-Z0-9]{36}|glpat-[a-zA-Z0-9_-]+|AKIA[A-Z0-9]{16}|xox[baprs]-[a-zA-Z0-9-]+|-----BEGIN.*PRIVATE KEY|eyJ[a-zA-Z0-9_-]+\\\\.eyJ[a-zA-Z0-9_-]+\\\\.\\)' \"E:/Projects/archarena/.planning/codebase\"/*.md)",
+      "Bash(node \".claude/get-shit-done/bin/gsd-tools.cjs\" commit \"docs: map existing codebase\" --files .planning/codebase/*.md)",
+      "Bash(node *)",
+      "WebSearch",
+      "Skill(gsd:plan-phase)",
+      "Skill(gsd:code-review)",
+      "Skill(gsd:code-review-fix)",
+      "Skill(gsd:execute-phase)",
+      "Skill(gsd:discuss-phase)"
     ]
   }
 }

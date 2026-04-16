@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { generateAnthropicHint, generateGeminiHint } from "@/lib/ai"
+import { generateAnthropicHint, generateGeminiHint, truncateGraphForAI, truncateHistoryForAI } from "@/lib/ai"
 import { LIMITS } from "@/lib/limits"
 import type { LlmProvider } from "@/types"
 
@@ -15,7 +15,11 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { sessionId, graph, history, llmProvider = "anthropic" } = await req.json()
+  const { sessionId, graph: rawGraph, history: rawHistory, llmProvider = "anthropic" } = await req.json()
+
+  // Truncate inputs before they reach the AI (defense in depth)
+  const graph = truncateGraphForAI(rawGraph)
+  const history = truncateHistoryForAI(rawHistory ?? [])
 
   if (!sessionId) {
     return NextResponse.json(
@@ -61,6 +65,23 @@ export async function POST(req: NextRequest) {
       {
         error: "free_limit_reached",
         hintsUsed: interviewSession.hintsUsed,
+      },
+      { status: 403 }
+    )
+  }
+
+  // 4b. Global Daily Limit check
+  const { checkAndIncrementDailyHints } = await import("@/lib/daily-limits")
+  const dailyCheck = await checkAndIncrementDailyHints(
+    session.user.id,
+    userTier as "FREE" | "PRO" | "PREMIUM"
+  )
+
+  if (!dailyCheck.allowed) {
+    return NextResponse.json(
+      {
+        error: "daily_limit_reached",
+        message: "Daily hint limit reached. Resets in 24 hours.",
       },
       { status: 403 }
     )

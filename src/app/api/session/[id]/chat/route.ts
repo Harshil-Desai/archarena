@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma"
 import {
   generateAnthropicChatReply,
   generateGeminiChatReply,
+  truncateGraphForAI,
+  truncateHistoryForAI,
 } from "@/lib/ai"
 import type { AIModel, ChatMessage, LlmProvider, SemanticGraph } from "@/types"
 
@@ -93,15 +95,19 @@ export async function POST(
 
   const historyWithUserMessage = [...persistedHistory, userMessage]
 
+  // Truncate inputs before they reach the AI (defense in depth)
+  const safeGraph = truncateGraphForAI(graph)
+  const safeHistory = truncateHistoryForAI(historyWithUserMessage)
+
   let reply: string
   let model: AIModel
 
   try {
     if (llmProvider === "gemini") {
-      reply = await generateGeminiChatReply(activePrompt, graph, historyWithUserMessage)
+      reply = await generateGeminiChatReply(activePrompt, safeGraph, safeHistory)
       model = "flash"
     } else {
-      reply = await generateAnthropicChatReply(activePrompt, graph, historyWithUserMessage)
+      reply = await generateAnthropicChatReply(activePrompt, safeGraph, safeHistory)
       model = "haiku"
     }
   } catch (err) {
