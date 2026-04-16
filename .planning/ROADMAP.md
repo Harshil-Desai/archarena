@@ -45,8 +45,11 @@ Plans:
   3. User sees a score summary with total, average, and trend
   4. User can click a session to view details or retake
   5. All pages render correctly on mobile, tablet, and desktop
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 3 plans
+Plans:
+- [ ] 02-01-PLAN.md — Shared utilities (src/lib/utils.ts), HistorySession type, /api/history pro-gate removal
+- [ ] 02-02-PLAN.md — Dashboard page (SessionCard, StatsBar components, /dashboard route)
+- [ ] 02-03-PLAN.md — Auth redirect on /, /history redirect, MobileNotice, canvas controls verification
 
 ### Phase 3: Enhanced Interview Experience
 **Goal**: The interview loop is richer with more components, semantic text context, and guided onboarding
@@ -92,7 +95,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Stability & Performance | 0/2 | Not started | - |
-| 2. Dashboard & Session Management | 0/TBD | Not started | - |
+| 2. Dashboard & Session Management | 0/3 | Not started | - |
 | 3. Enhanced Interview Experience | 0/TBD | Not started | - |
 | 4. Analytics & Progress Tracking | 0/TBD | Not started | - |
 | 5. Voice Explanations | 0/TBD | Not started | - |
