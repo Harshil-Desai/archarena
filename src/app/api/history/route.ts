@@ -9,16 +9,6 @@ export async function GET() {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 })
   }
 
-  // Read tier from DB (not session token — may be stale)
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { tier: true },
-  })
-
-  if (user?.tier === "FREE") {
-    return NextResponse.json({ error: "pro_required" }, { status: 403 })
-  }
-
   const sessions = await prisma.interviewSession.findMany({
     where: { userId: session.user.id },
     orderBy: { updatedAt: "desc" },
