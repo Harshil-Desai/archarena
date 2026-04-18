@@ -776,9 +776,13 @@ export default function Home() {
   const { data: session, status } = useSession();
   const setActivePrompt = useSessionStore((s) => s.setActivePrompt);
 
-  const loggedIn = Boolean(session);
-  const currentTier = getTier(session?.user?.tier);
-  const allPromptsUnlocked = loggedIn && currentTier !== "FREE";
+  // D-01: redirect authenticated users to /dashboard
+  // Marketing page stays pure for logged-out visitors — no conditional rendering
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/dashboard")
+    }
+  }, [status, router])
 
   useEffect(() => {
     const el = promptsRef.current;
@@ -805,6 +809,12 @@ export default function Home() {
     cards.forEach((card) => obs.observe(card));
     return () => obs.disconnect();
   }, []);
+
+  const loggedIn = Boolean(session);
+  const currentTier = getTier(session?.user?.tier);
+  const allPromptsUnlocked = loggedIn && currentTier !== "FREE";
+
+  if (status === "authenticated") return null
 
   const handleHeroCta = () => {
     if (status === "loading") return;
