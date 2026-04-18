@@ -38,6 +38,7 @@ import { ChatPanel } from "@/components/chat/ChatPanel";
 import { ScorePanel } from "@/components/score/ScorePanel";
 import { NotesPanel } from "@/components/notes/NotesPanel";
 import { ExportButton } from "@/components/session/ExportButton";
+import { MobileNotice } from "@/components/session/MobileNotice";
 
 function isSemanticGraph(value: unknown): value is SemanticGraph {
   if (!value || typeof value !== "object") return false;
@@ -540,6 +541,7 @@ export default function SessionPage({
 
   return (
     <div className="relative h-full w-full">
+      <MobileNotice />
       <SessionLayout
         left={
           <InterviewCanvas
