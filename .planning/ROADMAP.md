@@ -48,8 +48,8 @@ Plans:
 **Plans:** 3 plans
 Plans:
 - [x] 02-01-PLAN.md — Shared utilities (src/lib/utils.ts), HistorySession type, /api/history pro-gate removal
-- [ ] 02-02-PLAN.md — Dashboard page (SessionCard, StatsBar components, /dashboard route)
-- [ ] 02-03-PLAN.md — Auth redirect on /, /history redirect, MobileNotice, canvas controls verification
+- [x] 02-02-PLAN.md — Dashboard page (SessionCard, StatsBar components, /dashboard route)
+- [x] 02-03-PLAN.md — Auth redirect on /, /history redirect, MobileNotice, canvas controls verification
 
 ### Phase 3: Enhanced Interview Experience
 **Goal**: The interview loop is richer with more components, semantic text context, and guided onboarding
