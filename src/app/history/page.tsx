@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PROMPTS } from "@/lib/prompts";
-import { NavBar } from "@/components/ui/NavBar";
+import { UserNavBar } from "@/components/ui/UserNavBar";
 import { Icon } from "@/components/ui/Icon";
 
 export default async function HistoryPage() {
@@ -22,11 +22,9 @@ export default async function HistoryPage() {
   const totalHints = sessions.reduce((sum, s) => sum + s.hintsUsed, 0);
   const avgHints = totalRounds ? Math.round(totalHints / totalRounds * 10) / 10 : 0;
 
-  const tier = ((session.user as { tier?: string }).tier ?? "FREE").toUpperCase();
-
   return (
     <div style={{ minHeight: "100vh" }}>
-      <NavBar tier={tier} userName={session.user?.name?.[0] ?? "H"} />
+      <UserNavBar />
       <div style={{ maxWidth: 1440, margin: "0 auto", padding: "32px 24px 60px" }}>
         <div className="col gap-1" style={{ marginBottom: 28 }}>
           <span className="eyebrow">Your archive</span>

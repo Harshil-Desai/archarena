@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { Logo } from "@/components/ui/Logo";
+import { prisma } from "@/lib/prisma";
 
 // ─── Static data ───────────────────────────────────────────────────
 
@@ -21,6 +22,33 @@ const LEADERBOARD = [
   { rank: 5,   user: "alex.c",   score: 90, elo: 2301, trend: "▼",  isYou: false },
   { rank: 132, user: "you",      score: 84, elo: 1820, trend: "▲",  isYou: true  },
 ];
+
+async function fetchLeaderboard() {
+  const rows = await prisma.$queryRaw<
+    { userId: string; name: string | null; email: string | null; bestScore: number; totalRounds: bigint }[]
+  >`
+    SELECT
+      u.id AS "userId",
+      u.name,
+      u.email,
+      COALESCE(MAX(((s."scoreResult"->>'overall')::int)), 0) AS "bestScore",
+      COUNT(s.id)::bigint AS "totalRounds"
+    FROM "User" u
+    LEFT JOIN "InterviewSession" s ON s."userId" = u.id AND s."scoreResult" IS NOT NULL
+    GROUP BY u.id, u.name, u.email
+    HAVING COALESCE(MAX(((s."scoreResult"->>'overall')::int)), 0) > 0
+    ORDER BY "bestScore" DESC, "totalRounds" DESC
+    LIMIT 10;
+  `;
+  return rows.map((r, i) => ({
+    rank: i + 1,
+    user: (r.name ?? r.email?.split("@")[0] ?? "player").toLowerCase().replace(/\s+/g, "."),
+    score: r.bestScore,
+    elo: 1500 + r.bestScore * 10,
+    trend: i < 3 ? "▲" : i < 6 ? "—" : "▼",
+    isYou: false,
+  }));
+}
 
 // ─── Sub-components ─────────────────────────────────────────────────
 
@@ -190,7 +218,7 @@ function Hero() {
             <Link href="/dashboard" className="btn btn-primary" style={{ padding: "14px 22px", fontSize: 14 }}>
               Start a free round <Icon name="arrow-right" size={14} />
             </Link>
-            <Link href="/session/demo" className="btn btn-ghost" style={{ padding: "14px 18px", fontSize: 14 }}>
+            <Link href="/dashboard" className="btn btn-ghost" style={{ padding: "14px 18px", fontSize: 14 }}>
               <Icon name="play" size={12} /> Watch demo (48s)
             </Link>
           </div>
@@ -301,7 +329,7 @@ function PromptShowcase() {
   );
 }
 
-function Leaderboard() {
+function Leaderboard({ entries }: { entries: typeof LEADERBOARD }) {
   return (
     <section style={{ maxWidth: 1280, margin: "0 auto", padding: "80px 28px" }}>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 40 }}>
@@ -332,7 +360,7 @@ function Leaderboard() {
             <span className="mono" style={{ fontSize: 10.5, color: "var(--text-4)" }}>UPDATED 4m ago</span>
           </div>
           <div style={{ padding: "8px 0" }}>
-            {LEADERBOARD.map((r, i) => (
+            {entries.map((r, i) => (
               <div key={r.rank} className="row between" style={{
                 padding: "12px 18px",
                 background: r.isYou ? "color-mix(in oklch, var(--accent) 10%, transparent)" : "transparent",
@@ -459,14 +487,16 @@ function Footer() {
 
 // ─── Page ─────────────────────────────────────────────────────────
 
-export default function HomePage() {
+export default async function HomePage() {
+  const realLeaderboard = await fetchLeaderboard();
+  const leaderboardData = realLeaderboard.length >= 4 ? realLeaderboard : LEADERBOARD;
   return (
     <div className="dot-grid-soft" style={{ minHeight: "100vh" }}>
       <LandingNavbar />
       <Hero />
       <HowItWorks />
       <PromptShowcase />
-      <Leaderboard />
+      <Leaderboard entries={leaderboardData} />
       <Testimonials />
       <CTA />
       <Footer />

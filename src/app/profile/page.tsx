@@ -3,9 +3,11 @@ import Link from "next/link";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PROMPTS } from "@/lib/prompts";
-import { NavBar } from "@/components/ui/NavBar";
+import { UserNavBar } from "@/components/ui/UserNavBar";
 import { Icon } from "@/components/ui/Icon";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { computeStreak } from "@/lib/user-meta";
+import { DangerZone } from "./DangerZone";
 
 export default async function ProfilePage() {
   const session = await auth();
@@ -23,6 +25,9 @@ export default async function ProfilePage() {
   const avgScore = scores.length ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : 0;
   const totalHints = sessions.reduce((sum, s) => sum + s.hintsUsed, 0);
 
+  const streak = await computeStreak(session.user.id);
+  const userTier = await prisma.user.findUnique({ where: { id: session.user.id }, select: { tier: true } });
+
   const rubric = {
     scalability:  scores.length ? Math.min(100, Math.round(avgScore * 1.08)) : 0,
     reliability:  scores.length ? Math.min(100, Math.round(avgScore * 0.85)) : 0,
@@ -36,8 +41,8 @@ export default async function ProfilePage() {
     { id: "ten-rounds",   icon: "bolt",    label: "Arena Regular",    desc: "Complete 10 rounds",                earned: totalRounds >= 10 },
     { id: "score-80",     icon: "trophy",  label: "Strong Candidate", desc: "Score 80+ on any prompt",           earned: bestScore >= 80 },
     { id: "score-90",     icon: "sparkles",label: "Staff-Level",      desc: "Score 90+ on any prompt",           earned: bestScore >= 90 },
-    { id: "streak-3",     icon: "bolt",    label: "On a Roll",        desc: "3-day practice streak",             earned: false },
-    { id: "streak-7",     icon: "spark",   label: "Week Warrior",     desc: "7-day practice streak",             earned: false },
+    { id: "streak-3",     icon: "bolt",    label: "On a Roll",        desc: "3-day practice streak",             earned: streak >= 3 },
+    { id: "streak-7",     icon: "spark",   label: "Week Warrior",     desc: "7-day practice streak",             earned: streak >= 7 },
     { id: "hard-prompt",  icon: "shield",  label: "Hard Mode",        desc: "Complete a hard difficulty prompt", earned: sessions.some(s => {
       const prompt = PROMPTS.find(p => p.id === s.promptId);
       return prompt?.difficulty === "hard";
@@ -49,7 +54,7 @@ export default async function ProfilePage() {
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      <NavBar tier="FREE" userName={initials[0] ?? "H"} />
+      <UserNavBar />
       <div style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px 80px" }}>
 
         {/* Profile identity card */}
@@ -72,15 +77,15 @@ export default async function ProfilePage() {
               </h1>
               <div className="row gap-3">
                 <span className="mono" style={{ fontSize: 11, color: "var(--text-4)" }}>{session.user?.email}</span>
-                <span className="chip chip-accent">FREE TIER</span>
+                <span className="chip chip-accent">{userTier?.tier ?? "FREE"} TIER</span>
               </div>
             </div>
 
             {/* Elo rank */}
             <div className="col" style={{ alignItems: "flex-end", gap: 4 }}>
-              <div className="mono" style={{ fontSize: 40, color: "var(--text-1)", letterSpacing: "-0.02em" }}>—</div>
+              <div className="mono" style={{ fontSize: 40, color: "var(--text-1)", letterSpacing: "-0.02em" }}>{bestScore || "—"}</div>
               <span className="eyebrow">Elo rating</span>
-              <span className="mono" style={{ fontSize: 11, color: "var(--text-5)" }}>Unranked</span>
+              <span className="mono" style={{ fontSize: 11, color: "var(--text-5)" }}>{bestScore ? "Best score" : "Unranked"}</span>
             </div>
           </div>
         </div>
@@ -92,7 +97,7 @@ export default async function ProfilePage() {
             { label: "Avg score",  value: avgScore ? `${avgScore}` : "—" },
             { label: "Best score", value: bestScore ? `${bestScore}` : "—" },
             { label: "Hints used", value: totalHints.toString() },
-            { label: "Streak",     value: "0d" },
+            { label: "Streak",     value: `${streak}d` },
           ].map(s => (
             <div key={s.label} className="card-inset p-4" style={{ textAlign: "center" }}>
               <div className="mono" style={{ fontSize: 28, color: "var(--text-1)", letterSpacing: "-0.01em" }}>{s.value}</div>
@@ -180,18 +185,7 @@ export default async function ProfilePage() {
         </div>
 
         {/* Danger zone */}
-        <div className="card p-5" style={{ marginTop: 16, borderColor: "color-mix(in oklch, var(--danger) 30%, var(--line-1))" }}>
-          <span className="eyebrow" style={{ color: "var(--danger)" }}>Danger zone</span>
-          <div className="row between" style={{ marginTop: 16 }}>
-            <div className="col gap-1">
-              <div style={{ fontSize: 13, color: "var(--text-1)" }}>Delete account</div>
-              <div style={{ fontSize: 12, color: "var(--text-4)" }}>Permanently delete your account and all session data. This cannot be undone.</div>
-            </div>
-            <button className="btn btn-ghost" style={{ color: "var(--danger)", borderColor: "color-mix(in oklch, var(--danger) 40%, transparent)", flexShrink: 0 }}>
-              Delete account
-            </button>
-          </div>
-        </div>
+        <DangerZone />
       </div>
     </div>
   );

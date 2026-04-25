@@ -13,14 +13,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem("archarena.theme") as "dark" | "light" | null;
-      if (stored) setTheme(stored);
-    } catch {}
+    // Read whatever the pre-hydration script set on <html>; fall back to dark.
+    const current = document.documentElement.getAttribute("data-theme");
+    if (current === "light" || current === "dark") setTheme(current);
   }, []);
 
   useEffect(() => {
-    document.body.setAttribute("data-theme", theme);
+    document.documentElement.setAttribute("data-theme", theme);
     try { localStorage.setItem("archarena.theme", theme); } catch {}
   }, [theme]);
 

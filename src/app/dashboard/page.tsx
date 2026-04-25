@@ -3,9 +3,10 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PROMPTS } from "@/lib/prompts";
-import { NavBar } from "@/components/ui/NavBar";
+import { UserNavBar } from "@/components/ui/UserNavBar";
 import { Icon } from "@/components/ui/Icon";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { computeStreak } from "@/lib/user-meta";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -62,12 +63,15 @@ export default async function DashboardPage() {
   };
 
   const stats = { totalSessions, avgScore, bestScore, totalHints, rubric };
+  const streak = await computeStreak(userId);
 
-  const tier = ((session.user as { tier?: string }).tier ?? "FREE").toUpperCase();
+  const sessionsThisWeek = recentSessions.filter(
+    (s) => Date.now() - new Date(s.updatedAt).getTime() < 7 * 24 * 60 * 60 * 1000
+  ).length;
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      <NavBar tier={tier} userName={session.user?.name?.[0] ?? "H"} />
+      <UserNavBar />
       <div style={{ maxWidth: 1440, margin: "0 auto", padding: "32px 24px 60px" }}>
 
         {/* Header */}
@@ -86,9 +90,9 @@ export default async function DashboardPage() {
         {/* Stats row - 4 cards */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, marginBottom: 20 }}>
           {[
-            { label: "Rounds played", value: stats.totalSessions.toString(), sub: "+3 this week",  tone: "var(--win)" },
-            { label: "Avg score",     value: stats.avgScore.toString(),      sub: "/ 100",          tone: "var(--text-4)" },
-            { label: "Best score",    value: stats.bestScore.toString(),     sub: "all time",       tone: "var(--text-4)" },
+            { label: "Rounds played", value: stats.totalSessions.toString(), sub: sessionsThisWeek > 0 ? `+${sessionsThisWeek} this week` : "all time", tone: sessionsThisWeek > 0 ? "var(--win)" : "var(--text-4)" },
+            { label: "Avg score",     value: stats.avgScore ? stats.avgScore.toString() : "—", sub: "/ 100",    tone: "var(--text-4)" },
+            { label: "Best score",    value: stats.bestScore ? stats.bestScore.toString() : "—", sub: "all time", tone: "var(--text-4)" },
             { label: "Hints used",    value: stats.totalHints.toString(),    sub: "total",          tone: "var(--text-4)" },
           ].map(s => (
             <div key={s.label} className="card p-5" style={{ minHeight: 120 }}>
@@ -121,7 +125,9 @@ export default async function DashboardPage() {
               </div>
             </div>
             <div className="col" style={{ alignItems: "flex-end" }}>
-              <div className="mono" style={{ fontSize: 48, color: "var(--text-1)", letterSpacing: "-0.02em" }}>7<span style={{ color: "var(--gold)", marginLeft: 2 }}>◆</span></div>
+              <div className="mono" style={{ fontSize: 48, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
+                {streak}<span style={{ color: streak > 0 ? "var(--gold)" : "var(--text-5)", marginLeft: 2 }}>◆</span>
+              </div>
               <span className="eyebrow">Day streak</span>
             </div>
           </div>

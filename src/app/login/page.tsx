@@ -1,15 +1,35 @@
 import Link from "next/link";
 import { Icon } from "@/components/ui/Icon";
 import { Logo } from "@/components/ui/Logo";
+import { prisma } from "@/lib/prisma";
 
-const LEADERBOARD_PREVIEW = [
-  { rank: 1, user: "satya.m", elo: 2480 },
-  { rank: 2, user: "priya.k", elo: 2411 },
-  { rank: 3, user: "hiro.t",  elo: 2388 },
-  { rank: 4, user: "neha.j",  elo: 2340 },
-];
+export default async function LoginPage() {
+  const rows = await prisma.$queryRaw<
+    { userId: string; name: string | null; email: string | null; bestScore: number }[]
+  >`
+    SELECT u.id AS "userId", u.name, u.email,
+      COALESCE(MAX(((s."scoreResult"->>'overall')::int)), 0) AS "bestScore"
+    FROM "User" u
+    LEFT JOIN "InterviewSession" s ON s."userId" = u.id AND s."scoreResult" IS NOT NULL
+    GROUP BY u.id, u.name, u.email
+    HAVING COALESCE(MAX(((s."scoreResult"->>'overall')::int)), 0) > 0
+    ORDER BY "bestScore" DESC
+    LIMIT 4;
+  `;
 
-export default function LoginPage() {
+  const LEADERBOARD_PREVIEW = rows.length > 0
+    ? rows.map((r, i) => ({
+        rank: i + 1,
+        user: (r.name ?? r.email?.split("@")[0] ?? "player").toLowerCase().replace(/\s+/g, "."),
+        elo: 1500 + r.bestScore * 10,
+      }))
+    : [
+        { rank: 1, user: "satya.m", elo: 2480 },
+        { rank: 2, user: "priya.k", elo: 2411 },
+        { rank: 3, user: "hiro.t",  elo: 2388 },
+        { rank: 4, user: "neha.j",  elo: 2340 },
+      ];
+
   return (
     <div style={{ minHeight: "100vh", display: "grid", gridTemplateColumns: "1fr 1fr" }}>
       {/* Left — form */}

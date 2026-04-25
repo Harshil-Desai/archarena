@@ -36,7 +36,7 @@
   --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-:root, body[data-theme="dark"] {
+:root, html[data-theme="dark"] {
   --bg-0: #07070f;
   --bg-1: #0b0b16;
   --bg-2: #0f0f1c;
@@ -54,7 +54,7 @@
   --text-5: #3a3d59;
 }
 
-body[data-theme="light"] {
+html[data-theme="light"] {
   --bg-0: #f6f4ee;
   --bg-1: #fbf9f3;
   --bg-2: #efede5;
@@ -116,10 +116,10 @@ h1, h2, h3, h4 { line-height: 1.08; font-weight: 500; }
   background-image: radial-gradient(circle, rgba(148,163,210,0.055) 1px, transparent 1px);
   background-size: 28px 28px;
 }
-body[data-theme="light"] .dot-grid {
+html[data-theme="light"] .dot-grid {
   background-image: radial-gradient(circle, rgba(30,30,50,0.13) 1px, transparent 1px);
 }
-body[data-theme="light"] .dot-grid-soft {
+html[data-theme="light"] .dot-grid-soft {
   background-image: radial-gradient(circle, rgba(30,30,50,0.07) 1px, transparent 1px);
 }
 
@@ -303,4 +303,4 @@ body[data-density="spacious"] { --d-unit: 5px; }
 /* ─── Focus / selection ─── */
 :focus-visible { outline: 2px solid color-mix(in oklch, var(--accent) 70%, transparent); outline-offset: 2px; border-radius: 6px; }
 ::selection { background: color-mix(in oklch, var(--accent) 40%, transparent); color: #fff; }
-body[data-theme="light"] ::selection { color: #fff; }
+html[data-theme="light"] ::selection { color: #fff; }
