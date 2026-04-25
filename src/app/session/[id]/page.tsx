@@ -15,7 +15,7 @@ const InterviewCanvas = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex items-center justify-center h-full bg-gray-950">
+      <div className="flex items-center justify-center h-full" style={{ background: "var(--bg-0)" }}>
         <div className="text-gray-400 text-sm">Loading canvas...</div>
       </div>
     ),
@@ -497,7 +497,7 @@ export default function SessionPage({
 
   if (authStatus === "loading") {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-0)" }}>
         <div className="flex flex-col items-center gap-3">
           <div className="w-5 h-5 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
           <p className="text-gray-500 text-sm">Loading session...</p>
@@ -510,7 +510,7 @@ export default function SessionPage({
 
   if (sessionError) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-0)" }}>
         <div className="text-center">
           <p className="text-gray-400 text-sm">
             Failed to load session.
@@ -528,7 +528,7 @@ export default function SessionPage({
 
   if (!sessionId || !isSessionHydrated) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--bg-0)" }}>
         <div className="flex flex-col items-center gap-3">
           <div className="w-5 h-5 border-2 border-gray-600 border-t-white rounded-full animate-spin" />
           <p className="text-gray-500 text-sm">Initializing session...</p>
