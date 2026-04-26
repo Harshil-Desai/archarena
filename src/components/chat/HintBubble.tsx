@@ -14,11 +14,21 @@ function getRelativeTime(timestamp: number) {
 
 export function HintBubble({ hint }: HintBubbleProps) {
   return (
-    <div className="rounded-lg border border-gray-800 bg-gray-900 px-3 py-2">
-      <p className="text-sm leading-relaxed text-gray-200">
+    <div
+      className="card-inset"
+      style={{ padding: "10px 14px", borderColor: "color-mix(in oklch, var(--accent) 25%, var(--line-1))" }}
+    >
+      <div className="row gap-2" style={{ marginBottom: 4 }}>
+        <span className="chip-dot" />
+        <span className="eyebrow" style={{ color: "var(--accent)", fontSize: 9.5 }}>HINT</span>
+      </div>
+      <p style={{ fontSize: 13, lineHeight: 1.55, color: "var(--text-2)", margin: 0 }}>
         {hint.content}
       </p>
-      <p className="mt-1 text-[10px] text-gray-500">
+      <p
+        className="mono"
+        style={{ marginTop: 6, fontSize: 10, color: "var(--text-4)" }}
+      >
         {getRelativeTime(hint.triggeredAt)}
       </p>
     </div>

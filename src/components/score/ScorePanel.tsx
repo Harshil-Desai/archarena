@@ -3,63 +3,78 @@
 import { useSessionStore } from "@/store/session";
 import { LIMITS } from "@/lib/limits";
 
-function scoreTone(score: number) {
+interface ScoreTone {
+  label: string;
+  text: string;
+  fill: string;
+}
+
+function scoreTone(score: number): ScoreTone {
   if (score < 50) {
     return {
-      label: "red",
-      scoreText: "text-red-400",
-      ring: "ring-red-500/30",
-      fill: "bg-red-500/60",
+      label: "needs work",
+      text: "var(--danger)",
+      fill: "color-mix(in oklch, var(--danger) 75%, transparent)",
     };
   }
-
   if (score < 75) {
     return {
-      label: "amber",
-      scoreText: "text-amber-300",
-      ring: "ring-amber-500/30",
-      fill: "bg-amber-400/60",
+      label: "promising",
+      text: "var(--gold)",
+      fill: "color-mix(in oklch, var(--gold) 75%, transparent)",
     };
   }
-
   return {
-    label: "green",
-    scoreText: "text-emerald-300",
-    ring: "ring-emerald-500/30",
-    fill: "bg-emerald-400/60",
+    label: "staff-level",
+    text: "var(--win)",
+    fill: "color-mix(in oklch, var(--win) 75%, transparent)",
   };
 }
 
 function BreakdownBar({
   label,
   value,
-  toneFillClass,
+  fill,
 }: {
   label: string;
   value: number;
-  toneFillClass: string;
+  fill: string;
 }) {
   const max = 25;
   const pct = Math.max(0, Math.min(100, (value / max) * 100));
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-xs text-gray-300">{label}</span>
-        <span className="text-xs text-gray-400 tabular-nums">
+      <div className="row between" style={{ marginBottom: 6 }}>
+        <span
+          style={{
+            fontSize: 11,
+            color: "var(--text-3)",
+            fontFamily: "var(--font-mono)",
+            letterSpacing: "0.05em",
+          }}
+        >
+          {label}
+        </span>
+        <span className="mono" style={{ fontSize: 11, color: "var(--text-2)" }}>
           {value}/{max}
         </span>
       </div>
       <div
-        className="h-2.5 rounded-full bg-gray-800 border border-gray-800 overflow-hidden"
+        className="bar-track"
         role="progressbar"
         aria-valuenow={value}
         aria-valuemin={0}
         aria-valuemax={max}
       >
         <div
-          className={`h-full ${toneFillClass}`}
-          style={{ width: `${pct}%` }}
+          style={{
+            height: "100%",
+            width: `${pct}%`,
+            background: fill,
+            borderRadius: 2,
+            transition: "width 0.4s ease-out",
+          }}
         />
       </div>
     </div>
@@ -73,26 +88,53 @@ export function ScorePanel() {
   const scoresUsed = useSessionStore((s) => s.scoresUsed);
 
   const limitReached = scoresUsed >= LIMITS.free.scoresPerSession;
-  const upgradeLinkClasses =
-    "bg-amber-600 text-white px-3 py-1 rounded text-xs hover:opacity-90 transition-opacity";
 
   if (isScoring) {
     return (
-      <section className="bg-gray-950">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 h-full">
-          <div className="flex items-center gap-3">
+      <section style={{ height: "100%" }}>
+        <div className="card edge-glow" style={{ padding: 20, height: "100%" }}>
+          <div className="row gap-3" style={{ alignItems: "flex-start" }}>
             <div
-              className="h-6 w-6 animate-spin rounded-full border-2 border-gray-700 border-t-emerald-400"
+              className="animate-spin"
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                border: "2px solid var(--line-2)",
+                borderTopColor: "var(--accent)",
+                flexShrink: 0,
+                marginTop: 2,
+              }}
               aria-hidden="true"
             />
-            <div>
-              <p className="text-sm font-medium text-gray-200">
-                Running review...
+            <div className="grow">
+              <span className="eyebrow" style={{ color: "var(--accent)" }}>
+                Running review
+              </span>
+              <p
+                style={{
+                  fontSize: 15,
+                  color: "var(--text-1)",
+                  margin: "6px 0 0",
+                  fontFamily: "var(--font-serif)",
+                  fontStyle: "italic",
+                }}
+              >
+                The interviewer is grading your design…
               </p>
-              <div className="mt-3 space-y-2">
-                <div className="h-2 bg-gray-800 rounded animate-pulse w-full" />
-                <div className="h-2 bg-gray-800 rounded animate-pulse w-11/12" />
-                <div className="h-2 bg-gray-800 rounded animate-pulse w-9/12" />
+              <div className="col gap-2" style={{ marginTop: 18 }}>
+                <div
+                  className="animate-pulse"
+                  style={{ height: 8, borderRadius: 4, background: "var(--bg-3)", width: "100%" }}
+                />
+                <div
+                  className="animate-pulse"
+                  style={{ height: 8, borderRadius: 4, background: "var(--bg-3)", width: "92%" }}
+                />
+                <div
+                  className="animate-pulse"
+                  style={{ height: 8, borderRadius: 4, background: "var(--bg-3)", width: "78%" }}
+                />
               </div>
             </div>
           </div>
@@ -104,26 +146,62 @@ export function ScorePanel() {
   if (scoreResult) {
     if (scoreResult.score === -1) {
       return (
-        <section className="bg-gray-950">
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 h-full">
-            <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-              <div className="text-2xl mb-3">⚠️</div>
-              <p className="text-red-400 text-sm font-medium">
-                {scoreResult.isQuotaError 
-                  ? 'Provider limit hit' 
-                  : 'Review failed'}
+        <section style={{ height: "100%" }}>
+          <div
+            className="card"
+            style={{
+              padding: 20,
+              height: "100%",
+              borderColor: "color-mix(in oklch, var(--danger) 30%, var(--line-1))",
+              background: "color-mix(in oklch, var(--danger) 6%, var(--bg-1))",
+            }}
+          >
+            <div
+              className="col center"
+              style={{ height: "100%", padding: 20, textAlign: "center", gap: 12 }}
+            >
+              <div style={{ fontSize: 28 }}>⚠️</div>
+              <p
+                className="serif"
+                style={{
+                  margin: 0,
+                  fontSize: 18,
+                  color: "var(--danger)",
+                  fontWeight: 500,
+                }}
+              >
+                {scoreResult.isQuotaError ? "Provider limit hit" : "Review failed"}
               </p>
-              <p className="text-gray-400 text-xs mt-2">
+              <p
+                style={{
+                  fontSize: 12.5,
+                  color: "var(--text-3)",
+                  lineHeight: 1.55,
+                  margin: 0,
+                }}
+              >
                 {scoreResult.error}
               </p>
               {scoreResult.isQuotaError && (
-                <p className="text-gray-500 text-xs mt-3">
+                <p
+                  style={{
+                    fontSize: 11.5,
+                    color: "var(--text-4)",
+                    fontFamily: "var(--font-mono)",
+                    margin: 0,
+                  }}
+                >
                   Switch providers or wait a minute, then run the review again.
                 </p>
               )}
               <button
                 onClick={() => setScoreResult(null)}
-                className="mt-4 text-xs text-blue-400 hover:text-blue-300 underline"
+                style={{
+                  marginTop: 8,
+                  fontSize: 12,
+                  color: "var(--accent)",
+                  textDecoration: "underline",
+                }}
               >
                 Clear and retry
               </button>
@@ -139,82 +217,91 @@ export function ScorePanel() {
     const b = scoreResult.breakdown;
 
     return (
-      <section className="bg-gray-950">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 h-full">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wider">
-                Score
-              </p>
-              <div
-                className={[
-                  "text-5xl font-semibold tabular-nums",
-                  tone.scoreText,
-                  "leading-none",
-                  "drop-shadow-[0_0_18px_rgba(0,0,0,0.6)]",
-                ].join(" ")}
-              >
-                {scoreResult.score}/100
-              </div>
-            </div>
-            <div
-              className={[
-                "shrink-0 rounded-xl border border-gray-800 px-3 py-2",
-                "bg-gray-950 text-sm text-gray-300",
-                tone.ring,
-              ].join(" ")}
-              aria-label="Scoring status"
-            >
-              {tone.label.toUpperCase()}
-            </div>
-          </div>
-
-          <div className="mt-5 grid grid-cols-1 gap-4">
-            <BreakdownBar
-              label="Scalability"
-              value={b.scalability}
-              toneFillClass={tone.fill}
-            />
-            <BreakdownBar
-              label="Reliability"
-              value={b.reliability}
-              toneFillClass={tone.fill}
-            />
-            <BreakdownBar
-              label="Tradeoffs"
-              value={b.tradeoffs}
-              toneFillClass={tone.fill}
-            />
-            <BreakdownBar
-              label="Completeness"
-              value={b.completeness}
-              toneFillClass={tone.fill}
-            />
-          </div>
-
-          <div className="mt-5">
-            <p className="text-sm font-medium text-gray-200 mb-1">
-              Feedback
-            </p>
-            <p className="text-sm text-gray-400 leading-relaxed whitespace-pre-wrap">
-              {scoreResult.feedback}
-            </p>
-          </div>
-
-          <div className="mt-5">
-            <p className="text-sm font-medium text-gray-200 mb-2">
-              Missed concepts
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {(scoreResult.missedConcepts || []).map((c, i) => (
-                <span
-                  key={`${c}-${i}`}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-900/20 border border-amber-700/50 text-amber-200"
+      <section style={{ height: "100%", overflow: "auto" }}>
+        <div className="card edge-glow" style={{ padding: 24, position: "relative", overflow: "hidden" }}>
+          <div className="ambient" style={{ opacity: 0.4 }} />
+          <div style={{ position: "relative" }}>
+            <div className="row between" style={{ alignItems: "flex-start", marginBottom: 24 }}>
+              <div className="col gap-1">
+                <span className="eyebrow">Final score</span>
+                <div
+                  className="mono"
+                  style={{
+                    fontSize: 56,
+                    fontWeight: 600,
+                    color: tone.text,
+                    lineHeight: 1,
+                    letterSpacing: "-0.02em",
+                    textShadow: `0 0 30px color-mix(in oklch, ${tone.text} 30%, transparent)`,
+                  }}
                 >
-                  {c}
-                </span>
-              ))}
+                  {scoreResult.score}
+                  <span style={{ color: "var(--text-4)", fontSize: 24, marginLeft: 4 }}>/100</span>
+                </div>
+              </div>
+              <span
+                className="chip"
+                style={{
+                  flexShrink: 0,
+                  color: tone.text,
+                  borderColor: `color-mix(in oklch, ${tone.text} 35%, transparent)`,
+                  background: `color-mix(in oklch, ${tone.text} 10%, var(--bg-2))`,
+                }}
+              >
+                {tone.label}
+              </span>
             </div>
+
+            <div className="col gap-4" style={{ marginBottom: 24 }}>
+              <BreakdownBar label="Scalability"   value={b.scalability}   fill={tone.fill} />
+              <BreakdownBar label="Reliability"   value={b.reliability}   fill={tone.fill} />
+              <BreakdownBar label="Tradeoffs"     value={b.tradeoffs}     fill={tone.fill} />
+              <BreakdownBar label="Completeness" value={b.completeness} fill={tone.fill} />
+            </div>
+
+            <div className="card-inset" style={{ padding: 16, marginBottom: 18 }}>
+              <span className="eyebrow" style={{ marginBottom: 8, display: "block" }}>
+                Mentor&apos;s note
+              </span>
+              <p
+                className="serif"
+                style={{
+                  fontStyle: "italic",
+                  fontSize: 14,
+                  color: "var(--text-2)",
+                  lineHeight: 1.6,
+                  margin: 0,
+                  whiteSpace: "pre-wrap",
+                }}
+              >
+                {scoreResult.feedback}
+              </p>
+            </div>
+
+            {scoreResult.missedConcepts && scoreResult.missedConcepts.length > 0 && (
+              <div>
+                <span className="eyebrow" style={{ marginBottom: 10, display: "block" }}>
+                  Missed concepts
+                </span>
+                <div className="row gap-2" style={{ flexWrap: "wrap" }}>
+                  {scoreResult.missedConcepts.map((c, i) => (
+                    <span
+                      key={`${c}-${i}`}
+                      className="chip"
+                      style={{
+                        color: "var(--gold)",
+                        borderColor: "color-mix(in oklch, var(--gold) 35%, transparent)",
+                        background: "color-mix(in oklch, var(--gold) 10%, var(--bg-2))",
+                        textTransform: "none",
+                        letterSpacing: "0",
+                      }}
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -222,29 +309,81 @@ export function ScorePanel() {
   }
 
   return (
-    <section className="bg-gray-950">
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 h-full">
-        <div className="h-full flex flex-col items-stretch justify-center">
-          <div className="border border-dashed border-gray-800 rounded-xl p-4 bg-gray-950/20">
-            <p className="text-sm text-gray-300 text-center">
+    <section style={{ height: "100%" }}>
+      <div className="card" style={{ padding: 20, height: "100%" }}>
+        <div className="col center" style={{ height: "100%" }}>
+          <div
+            style={{
+              borderRadius: 14,
+              border: "1px dashed var(--line-2)",
+              padding: 20,
+              background: "color-mix(in oklch, var(--bg-2) 40%, transparent)",
+              width: "100%",
+            }}
+          >
+            <p
+              className="serif"
+              style={{
+                fontSize: 16,
+                color: "var(--text-2)",
+                textAlign: "center",
+                margin: 0,
+                fontStyle: "italic",
+              }}
+            >
               Run review when the main path is on the board.
             </p>
             {limitReached ? (
-              <div className="mt-4 bg-amber-900/30 border border-amber-600/50 rounded-lg p-3 text-amber-200 text-sm">
-                <div className="font-semibold mb-2">
+              <div
+                style={{
+                  marginTop: 18,
+                  borderRadius: 10,
+                  padding: 14,
+                  background: "color-mix(in oklch, var(--gold) 12%, transparent)",
+                  border: "1px solid color-mix(in oklch, var(--gold) 35%, transparent)",
+                  color: "var(--text-1)",
+                }}
+              >
+                <div style={{ fontWeight: 500, marginBottom: 6, fontSize: 13 }}>
                   Free plan gets {LIMITS.free.scoresPerSession} review per session.
                 </div>
-                <div className="mb-3">
-                  <div>Start a fresh session for another pass, or</div>
-                  <div>upgrade for unlimited reviews.</div>
+                <div style={{ marginBottom: 12, fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.55 }}>
+                  Start a fresh session for another pass, or upgrade for unlimited reviews.
                 </div>
-                <a href="/billing" className={upgradeLinkClasses}>
+                <a
+                  href="/billing"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    padding: "6px 12px",
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    background: "var(--gold)",
+                    color: "#1a1a1a",
+                    textDecoration: "none",
+                  }}
+                >
                   Upgrade to Pro →
                 </a>
               </div>
             ) : (
-              <div className="mt-4 rounded-lg border border-gray-800 bg-gray-950 text-sm text-gray-200 px-3 py-2 text-center">
-                Run Review
+              <div
+                className="mono"
+                style={{
+                  marginTop: 18,
+                  borderRadius: 10,
+                  border: "1px solid var(--line-2)",
+                  background: "var(--bg-2)",
+                  padding: "10px 12px",
+                  textAlign: "center",
+                  fontSize: 12,
+                  color: "var(--text-2)",
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Press &ldquo;Run Review&rdquo; in header
               </div>
             )}
           </div>

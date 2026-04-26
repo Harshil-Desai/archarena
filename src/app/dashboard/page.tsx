@@ -69,6 +69,23 @@ export default async function DashboardPage() {
     (s) => Date.now() - new Date(s.updatedAt).getTime() < 7 * 24 * 60 * 60 * 1000
   ).length;
 
+  // Daily challenge — picks one prompt deterministically per UTC day
+  const today = new Date();
+  const dayOfYear = Math.floor(
+    (today.getTime() - Date.UTC(today.getUTCFullYear(), 0, 0)) / 86400000
+  );
+  const dailyPrompt = PROMPTS[dayOfYear % PROMPTS.length];
+  const utcMidnight = Date.UTC(
+    today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 1, 0, 0, 0
+  );
+  const msToReset = utcMidnight - today.getTime();
+  const resetH = Math.floor(msToReset / 3600000);
+  const resetM = Math.floor((msToReset % 3600000) / 60000);
+  const resetIn = `${String(resetH).padStart(2, "0")}h ${String(resetM).padStart(2, "0")}m`;
+  const dailyDiffClass =
+    dailyPrompt.difficulty === "easy" ? "chip-easy" :
+    dailyPrompt.difficulty === "medium" ? "chip-med" : "chip-hard";
+
   return (
     <div style={{ minHeight: "100vh" }}>
       <UserNavBar />
@@ -105,30 +122,64 @@ export default async function DashboardPage() {
           ))}
         </div>
 
-        {/* CTA hero card */}
-        <div className="card edge-glow" style={{ padding: 28, position: "relative", overflow: "hidden", marginBottom: 20 }}>
-          <div className="ambient" style={{ opacity: 0.7 }} />
-          <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "center" }}>
-            <div className="col gap-3">
-              <span className="eyebrow">Ready to compete</span>
-              <h2 className="serif" style={{ fontSize: 32, margin: 0, fontWeight: 400, letterSpacing: "-0.01em" }}>
-                Continue your <em>streak.</em>
-              </h2>
-              <p style={{ fontSize: 13, color: "var(--text-3)", margin: 0, maxWidth: 480 }}>
-                Pick any question and start a new round. The AI interviewer is waiting.
-              </p>
-              <div className="row gap-3" style={{ marginTop: 8 }}>
-                <Link href="/prompts" className="btn btn-primary" style={{ padding: "12px 20px" }}>
-                  Start round <Icon name="arrow-right" size={14} />
-                </Link>
-                <Link href="/history" className="btn btn-ghost">View history</Link>
+        {/* CTA + Daily Challenge row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
+          {/* CTA hero */}
+          <div className="card edge-glow" style={{ padding: 24, position: "relative", overflow: "hidden" }}>
+            <div className="ambient" style={{ opacity: 0.7 }} />
+            <div style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr auto", gap: 16, alignItems: "center", height: "100%" }}>
+              <div className="col gap-2">
+                <span className="eyebrow">Ready to compete</span>
+                <h2 className="serif" style={{ fontSize: 26, margin: 0, fontWeight: 400, letterSpacing: "-0.01em", lineHeight: 1.15 }}>
+                  Continue your <em>streak.</em>
+                </h2>
+                <p style={{ fontSize: 12.5, color: "var(--text-3)", margin: 0, lineHeight: 1.5 }}>
+                  Pick any question and start a new round.
+                </p>
+                <div className="row gap-2" style={{ marginTop: 6 }}>
+                  <Link href="/prompts" className="btn btn-primary" style={{ padding: "10px 16px", fontSize: 12.5 }}>
+                    Start round <Icon name="arrow-right" size={13} />
+                  </Link>
+                  <Link href="/history" className="btn btn-ghost" style={{ padding: "10px 14px", fontSize: 12.5 }}>
+                    History
+                  </Link>
+                </div>
+              </div>
+              <div className="col" style={{ alignItems: "flex-end" }}>
+                <div className="mono" style={{ fontSize: 44, color: "var(--text-1)", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                  {streak}<span style={{ color: streak > 0 ? "var(--gold)" : "var(--text-5)", marginLeft: 2 }}>◆</span>
+                </div>
+                <span className="eyebrow" style={{ marginTop: 4 }}>Day streak</span>
               </div>
             </div>
-            <div className="col" style={{ alignItems: "flex-end" }}>
-              <div className="mono" style={{ fontSize: 48, color: "var(--text-1)", letterSpacing: "-0.02em" }}>
-                {streak}<span style={{ color: streak > 0 ? "var(--gold)" : "var(--text-5)", marginLeft: 2 }}>◆</span>
+          </div>
+
+          {/* Daily Challenge */}
+          <div className="card p-5">
+            <div className="row between" style={{ marginBottom: 12 }}>
+              <div className="col gap-1">
+                <span className="eyebrow" style={{ color: "var(--accent)" }}>● Daily challenge</span>
+                <h3 className="serif" style={{ fontSize: 22, margin: 0, fontWeight: 400, letterSpacing: "-0.01em", lineHeight: 1.2 }}>
+                  {dailyPrompt.title}
+                </h3>
               </div>
-              <span className="eyebrow">Day streak</span>
+              <div className="col" style={{ alignItems: "flex-end", flexShrink: 0 }}>
+                <span className="mono" style={{ fontSize: 16, color: "var(--text-1)", letterSpacing: "0.02em" }}>{resetIn}</span>
+                <span className="eyebrow" style={{ marginTop: 2 }}>Resets in</span>
+              </div>
+            </div>
+            <p style={{ fontSize: 12.5, color: "var(--text-3)", lineHeight: 1.55, margin: "0 0 14px" }}>
+              {dailyPrompt.description}
+            </p>
+            <div className="row between">
+              <div className="row gap-2">
+                <span className={`chip ${dailyDiffClass}`}>{dailyPrompt.difficulty}</span>
+                <span className="chip">2× elo</span>
+                <span className="chip">{Math.round(dailyPrompt.timeLimit / 60)} min</span>
+              </div>
+              <Link href="/prompts" className="btn btn-soft" style={{ padding: "8px 14px", fontSize: 12 }}>
+                Accept <Icon name="bolt" size={12} style={{ color: "var(--gold)" }} />
+              </Link>
             </div>
           </div>
         </div>
