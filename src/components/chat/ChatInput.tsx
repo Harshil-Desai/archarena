@@ -29,7 +29,14 @@ export function ChatInput({
   };
 
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-950/80 p-3">
+    <div
+      style={{
+        borderRadius: 12,
+        border: "1px solid var(--line-2)",
+        background: "color-mix(in oklch, var(--bg-0) 80%, transparent)",
+        padding: 12,
+      }}
+    >
       <textarea
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -37,17 +44,37 @@ export function ChatInput({
         disabled={disabled}
         placeholder={placeholder}
         rows={3}
-        className="w-full resize-none border-0 bg-transparent text-sm leading-relaxed text-gray-100 outline-none placeholder:text-gray-500 disabled:cursor-not-allowed disabled:text-gray-500"
+        className="w-full resize-none border-0 bg-transparent outline-none"
+        style={{
+          fontSize: 13,
+          lineHeight: 1.55,
+          color: disabled ? "var(--text-4)" : "var(--text-1)",
+          cursor: disabled ? "not-allowed" : "text",
+          fontFamily: "var(--font-sans)",
+        }}
       />
       <div className="mt-3 flex items-center justify-between gap-3">
-        <p className="text-[11px] text-gray-500">
+        <p
+          style={{
+            fontSize: 11,
+            color: "var(--text-4)",
+            fontFamily: "var(--font-mono)",
+            margin: 0,
+          }}
+        >
           Enter sends. Shift+Enter adds a line.
         </p>
         <button
           type="button"
           onClick={onSend}
           disabled={disabled || isEmpty}
-          className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-500 disabled:cursor-not-allowed disabled:bg-gray-800 disabled:text-gray-500"
+          className="btn btn-primary"
+          style={{
+            padding: "8px 14px",
+            fontSize: 12.5,
+            opacity: disabled || isEmpty ? 0.5 : 1,
+            cursor: disabled || isEmpty ? "not-allowed" : "pointer",
+          }}
         >
           Ask
         </button>

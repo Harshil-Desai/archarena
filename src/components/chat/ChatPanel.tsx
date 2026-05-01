@@ -13,10 +13,30 @@ interface ChatPanelProps {
   graph: SemanticGraph | null;
 }
 
-const amberUpgradeHintClasses =
-  "bg-amber-900/30 border border-amber-600/50 rounded-lg p-3 text-amber-200 text-sm";
-const upgradeLinkClasses =
-  "bg-amber-600 text-white px-3 py-1 rounded text-xs w-full mt-2 hover:opacity-90 transition-opacity";
+const upgradeNudgeStyle: React.CSSProperties = {
+  borderRadius: 10,
+  padding: 14,
+  fontSize: 13,
+  background: "color-mix(in oklch, var(--gold) 12%, transparent)",
+  border: "1px solid color-mix(in oklch, var(--gold) 35%, transparent)",
+  color: "var(--text-1)",
+};
+
+const upgradeLinkStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: "100%",
+  marginTop: 10,
+  padding: "8px 12px",
+  borderRadius: 6,
+  fontSize: 12,
+  fontWeight: 500,
+  background: "var(--gold)",
+  color: "#1a1a1a",
+  textDecoration: "none",
+  transition: "opacity .15s",
+};
 
 export function ChatPanel({ graph }: ChatPanelProps) {
   const sessionId = useSessionStore((s) => s.sessionId);
@@ -126,18 +146,45 @@ export function ChatPanel({ graph }: ChatPanelProps) {
 
   return (
     <section className="flex h-full min-h-0 flex-col bg-transparent">
-      <div className="flex h-11 shrink-0 items-center justify-between border-b border-gray-800 px-4">
-        <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
-          Interviewer
+      <div
+        className="flex shrink-0 items-center justify-between"
+        style={{
+          height: 44,
+          padding: "0 16px",
+          borderBottom: "1px solid var(--line-1)",
+        }}
+      >
+        <span className="eyebrow">Interviewer</span>
+        <span
+          className="mono"
+          style={{
+            padding: "3px 8px",
+            borderRadius: 999,
+            fontSize: 9.5,
+            background: "var(--bg-2)",
+            border: "1px solid var(--line-1)",
+            color: "var(--text-4)",
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+          }}
+        >
+          {llmProvider === "anthropic" ? "Claude Haiku" : "Gemini Flash"}
         </span>
-        <div className="rounded-full bg-gray-800 px-2 py-0.5 font-mono text-[10px] text-gray-500">
-          {llmProvider === "anthropic" ? "CLAUDE HAIKU" : "GEMINI FLASH"}
-        </div>
       </div>
 
       <div className="flex-1 min-h-0 space-y-4 overflow-y-auto p-4">
         {messages.length === 0 && hints.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-800 bg-gray-950/40 p-4 text-sm text-gray-400">
+          <div
+            style={{
+              borderRadius: 12,
+              border: "1px dashed var(--line-2)",
+              padding: 16,
+              fontSize: 13,
+              lineHeight: 1.55,
+              color: "var(--text-3)",
+              background: "color-mix(in oklch, var(--bg-2) 50%, transparent)",
+            }}
+          >
             Request a hint when you want the interviewer to push on bottlenecks,
             tradeoffs, and weak spots in the current diagram.
           </div>
@@ -148,12 +195,13 @@ export function ChatPanel({ graph }: ChatPanelProps) {
         ))}
 
         {hints.length > 0 && (
-          <div className="rounded-lg border border-gray-800 bg-gray-950/70 p-3">
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Interviewer hints
-              </p>
-              <span className="text-[10px] text-gray-600">
+          <div className="card-inset" style={{ padding: 12 }}>
+            <div className="row between" style={{ marginBottom: 10 }}>
+              <span className="eyebrow">Interviewer hints</span>
+              <span
+                className="mono"
+                style={{ fontSize: 10, color: "var(--text-5)" }}
+              >
                 {hints.length} total
               </span>
             </div>
@@ -167,54 +215,114 @@ export function ChatPanel({ graph }: ChatPanelProps) {
         <div ref={bottomRef} />
       </div>
 
-      <div className="shrink-0 border-t border-gray-800 bg-gray-900/30 p-4">
+      <div
+        className="shrink-0"
+        style={{
+          padding: 16,
+          borderTop: "1px solid var(--line-1)",
+          background: "color-mix(in oklch, var(--bg-1) 40%, transparent)",
+        }}
+      >
         {hintError && (
-          <p className="mb-2 text-xs text-amber-400">{hintError}</p>
+          <p
+            style={{
+              margin: "0 0 10px",
+              fontSize: 11.5,
+              color: "var(--gold)",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            {hintError}
+          </p>
         )}
         {!validation.canRequestHint && hintsRemaining > 0 && (
-          <p className="mb-2 text-xs text-amber-400">
+          <p
+            style={{
+              margin: "0 0 10px",
+              fontSize: 11.5,
+              color: "var(--gold)",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
             {validation.reason}
           </p>
         )}
 
-        <div className="mt-3">
+        <div>
           {hintsRemaining > 0 ? (
             <>
               <button
                 type="button"
                 onClick={askHint}
-                disabled={!validation.canRequestHint || isAiThinking || hintsUsed >= LIMITS.free.aiHintsPerSession}
-                className={[
-                  "w-full rounded-lg px-4 py-3 text-sm font-medium transition-colors shadow-sm",
+                disabled={
+                  !validation.canRequestHint ||
+                  isAiThinking ||
+                  hintsUsed >= LIMITS.free.aiHintsPerSession
+                }
+                className={
                   validation.canRequestHint && !isAiThinking
-                    ? "bg-blue-600 text-white hover:bg-blue-500"
-                    : "cursor-not-allowed bg-gray-800 text-gray-500",
-                ].join(" ")}
+                    ? "btn btn-primary"
+                    : "btn btn-soft"
+                }
+                style={{
+                  width: "100%",
+                  padding: "11px 16px",
+                  fontSize: 13,
+                  cursor:
+                    !validation.canRequestHint || isAiThinking
+                      ? "not-allowed"
+                      : "pointer",
+                  opacity:
+                    !validation.canRequestHint || isAiThinking ? 0.7 : 1,
+                }}
               >
                 {isAiThinking ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
-                    Reviewing...
+                    <span
+                      className="animate-spin"
+                      style={{
+                        height: 14,
+                        width: 14,
+                        borderRadius: "50%",
+                        border: "2px solid color-mix(in oklch, var(--text-1) 20%, transparent)",
+                        borderTopColor: "var(--text-1)",
+                      }}
+                    />
+                    Reviewing…
                   </span>
                 ) : (
                   "Ask for a hint"
                 )}
               </button>
               <div
-                className={`mt-2 text-center text-xs ${
-                  hintsRemaining === 1 ? "font-medium text-amber-500" : "text-gray-500"
-                }`}
+                className="mono"
+                style={{
+                  marginTop: 8,
+                  textAlign: "center",
+                  fontSize: 11,
+                  color: hintsRemaining === 1 ? "var(--gold)" : "var(--text-4)",
+                  fontWeight: hintsRemaining === 1 ? 500 : 400,
+                  letterSpacing: "0.04em",
+                }}
               >
                 {hintsRemaining} hint{hintsRemaining === 1 ? "" : "s"} remaining
               </div>
             </>
           ) : (
-            <div className={amberUpgradeHintClasses}>
-              <div className="mb-1 font-semibold">
+            <div style={upgradeNudgeStyle}>
+              <div
+                style={{
+                  marginBottom: 4,
+                  fontWeight: 500,
+                  color: "var(--text-1)",
+                }}
+              >
                 Free plan has no hints left.
               </div>
-              <div className="mb-3">Upgrade if you want unlimited interviewer hints.</div>
-              <a href="/billing" className={upgradeLinkClasses}>
+              <div style={{ marginBottom: 4, color: "var(--text-3)", fontSize: 12.5 }}>
+                Upgrade if you want unlimited interviewer hints.
+              </div>
+              <a href="/billing" style={upgradeLinkStyle}>
                 Upgrade to Pro →
               </a>
             </div>

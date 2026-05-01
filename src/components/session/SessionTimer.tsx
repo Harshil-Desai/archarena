@@ -26,27 +26,47 @@ export function SessionTimer() {
   }, [startTimer, tickTimer]);
 
   return (
-    <div className="bg-gray-950">
-      <div
-        className="border border-gray-800 bg-gray-900 rounded-xl px-4 py-3 flex items-center gap-3"
-        aria-live="polite"
+    <div
+      aria-live="polite"
+      className="row gap-3"
+      style={{
+        padding: "8px 16px",
+        borderRadius: 10,
+        border: "1px solid var(--line-2)",
+        background: "var(--bg-2)",
+      }}
+    >
+      <span
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: 999,
+          background: isRunning ? "var(--win)" : "var(--text-5)",
+          boxShadow: isRunning
+            ? "0 0 12px color-mix(in oklch, var(--win) 60%, transparent)"
+            : "none",
+          animation: isRunning ? "blink 1.6s step-end infinite" : "none",
+          flexShrink: 0,
+        }}
+      />
+      <span
+        className="mono"
+        style={{
+          fontSize: 20,
+          letterSpacing: "0.04em",
+          color: timeLimitExceeded ? "var(--danger)" : "var(--text-1)",
+        }}
       >
+        {formatMMSS(secondsElapsed)}
+      </span>
+      {activePrompt && (
         <span
-          className={
-            isRunning
-              ? "w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_14px_rgba(34,197,94,0.7)]"
-              : "w-2.5 h-2.5 rounded-full bg-gray-800"
-          }
-        />
-        <span
-          className={[
-            "font-mono text-2xl tabular-nums",
-            timeLimitExceeded ? "text-red-400" : "text-gray-100",
-          ].join(" ")}
+          className="mono"
+          style={{ fontSize: 11, color: "var(--text-4)" }}
         >
-          {formatMMSS(secondsElapsed)}
+          / {formatMMSS(activePrompt.timeLimit)}
         </span>
-      </div>
+      )}
     </div>
   );
 }

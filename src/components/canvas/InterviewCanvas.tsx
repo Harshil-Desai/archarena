@@ -42,34 +42,50 @@ function ZoomControls() {
 
   return (
     <div
-      className="absolute bottom-3 right-3 z-10 
-                    flex items-center gap-1 
-                    bg-gray-900 border border-gray-700 
-                    rounded-lg px-2 py-1 shadow-lg shadow-black/20"
+      className="absolute bottom-3 right-3 z-10 flex items-center gap-1"
+      style={{
+        background: "color-mix(in oklch, var(--bg-1) 92%, transparent)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid var(--line-2)",
+        borderRadius: 8,
+        padding: "4px 8px",
+        boxShadow: "0 8px 24px -8px rgba(0,0,0,0.4)",
+      }}
     >
       <button
         onClick={() => editor.zoomOut()}
-        className="text-gray-400 hover:text-white w-6 h-6 
-                   flex items-center justify-center text-lg font-medium"
+        className="flex items-center justify-center"
+        style={{ width: 24, height: 24, color: "var(--text-3)", fontSize: 18, fontWeight: 500 }}
         title="Zoom out"
       >
         −
       </button>
-      <span className="text-gray-400 text-[11px] w-10 text-center tabular-nums font-mono">
+      <span
+        className="mono"
+        style={{ width: 40, textAlign: "center", fontSize: 11, color: "var(--text-2)" }}
+      >
         {Math.round(zoom * 100)}%
       </span>
       <button
         onClick={() => editor.zoomIn()}
-        className="text-gray-400 hover:text-white w-6 h-6 
-                   flex items-center justify-center text-lg font-medium"
+        className="flex items-center justify-center"
+        style={{ width: 24, height: 24, color: "var(--text-3)", fontSize: 18, fontWeight: 500 }}
         title="Zoom in"
       >
         +
       </button>
       <button
         onClick={() => editor.zoomToFit()}
-        className="text-gray-400 hover:text-white text-[10px] px-2 
-                   border-l border-gray-700 ml-1 h-4 flex items-center"
+        className="mono flex items-center"
+        style={{
+          fontSize: 10,
+          padding: "0 8px",
+          marginLeft: 4,
+          height: 16,
+          color: "var(--text-3)",
+          borderLeft: "1px solid var(--line-2)",
+          letterSpacing: "0.06em",
+        }}
         title="Fit to screen"
       >
         FIT

@@ -17,24 +17,49 @@ export function UsagePill() {
   const isExhausted = remaining <= 0
   const isLow = remaining === 1
 
+  const tone = isExhausted
+    ? "var(--danger)"
+    : isLow
+    ? "var(--gold)"
+    : "var(--text-3)";
+
+  const bg = isExhausted
+    ? "color-mix(in oklch, var(--danger) 12%, transparent)"
+    : isLow
+    ? "color-mix(in oklch, var(--gold) 14%, transparent)"
+    : "var(--bg-2)";
+
+  const borderColor = isExhausted
+    ? "color-mix(in oklch, var(--danger) 35%, transparent)"
+    : isLow
+    ? "color-mix(in oklch, var(--gold) 35%, transparent)"
+    : "var(--line-2)";
+
   return (
-    <div className={`
-      flex items-center gap-1.5 px-2.5 py-1 rounded-full 
-      text-xs font-medium border transition-colors
-      ${isExhausted 
-        ? "bg-red-900/30 border-red-800/50 text-red-400" 
-        : isLow 
-          ? "bg-amber-900/30 border-amber-800/50 text-amber-400"
-          : "bg-gray-800 border-gray-700 text-gray-400"
-      }
-    `}>
-      <span className={`w-1.5 h-1.5 rounded-full ${
-        isExhausted ? "bg-red-500" : isLow ? "bg-amber-500" : "bg-gray-500"
-      }`} />
+    <div
+      className="row gap-2"
+      style={{
+        padding: "4px 10px",
+        borderRadius: 999,
+        fontSize: 11,
+        fontFamily: "var(--font-mono)",
+        letterSpacing: "0.04em",
+        color: tone,
+        background: bg,
+        border: `1px solid ${borderColor}`,
+      }}
+    >
+      <span
+        style={{
+          width: 6,
+          height: 6,
+          borderRadius: 999,
+          background: tone,
+        }}
+      />
       {isExhausted
         ? "No hints left"
-        : `${remaining} hint${remaining === 1 ? "" : "s"} left`
-      }
+        : `${remaining} hint${remaining === 1 ? "" : "s"} left`}
     </div>
   )
 }

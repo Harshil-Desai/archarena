@@ -8,12 +8,20 @@ export function NotesPanel() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-transparent">
-      <div className="flex h-11 shrink-0 items-center justify-between border-b border-gray-800 px-4">
-        <span className="text-xs font-medium uppercase tracking-wider text-gray-400">
-          Notes
-        </span>
-        <span className="text-[10px] text-gray-600">
-          Assumptions · tradeoffs · risks
+      <div
+        className="flex shrink-0 items-center justify-between"
+        style={{
+          height: 44,
+          padding: "0 16px",
+          borderBottom: "1px solid var(--line-1)",
+        }}
+      >
+        <span className="eyebrow">Notes</span>
+        <span
+          className="mono"
+          style={{ fontSize: 10, color: "var(--text-5)" }}
+        >
+          assumptions · tradeoffs · risks
         </span>
       </div>
       <div className="min-h-0 flex-1">
@@ -21,7 +29,14 @@ export function NotesPanel() {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Scale assumptions, tradeoffs, open risks..."
-          className="w-full h-full resize-none bg-transparent p-4 text-sm text-gray-300 outline-none placeholder:text-gray-700"
+          className="w-full h-full resize-none bg-transparent outline-none"
+          style={{
+            padding: 16,
+            fontSize: 13,
+            lineHeight: 1.6,
+            color: "var(--text-2)",
+            fontFamily: "var(--font-sans)",
+          }}
         />
       </div>
     </div>

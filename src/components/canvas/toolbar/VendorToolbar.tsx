@@ -153,12 +153,29 @@ function ToolButton({ icon, tooltip, isActive, disabled, onClick }: ToolButtonPr
       disabled={disabled}
       title={tooltip}
       aria-label={tooltip}
-      className={`
-        w-9 h-9 rounded-lg flex items-center justify-center
-        transition-colors duration-100
-        ${isActive ? "bg-gray-700 text-white" : "bg-transparent text-gray-400 hover:bg-gray-800 hover:text-white"}
-        ${disabled ? "opacity-30 cursor-not-allowed" : "cursor-pointer"}
-      `}
+      className="flex items-center justify-center transition-colors duration-100"
+      style={{
+        width: 34,
+        height: 34,
+        borderRadius: 8,
+        background: isActive ? "var(--bg-3)" : "transparent",
+        color: isActive ? "var(--text-1)" : "var(--text-3)",
+        border: isActive ? "1px solid var(--line-2)" : "1px solid transparent",
+        opacity: disabled ? 0.3 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
+      }}
+      onMouseEnter={(e) => {
+        if (!disabled && !isActive) {
+          (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-2)";
+          (e.currentTarget as HTMLButtonElement).style.color = "var(--text-1)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!disabled && !isActive) {
+          (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+          (e.currentTarget as HTMLButtonElement).style.color = "var(--text-3)";
+        }
+      }}
     >
       {icon}
     </button>
@@ -277,9 +294,15 @@ export function VendorToolbar() {
 
   return (
     <div
-      className="absolute left-3 top-1/2 -translate-y-1/2 z-10
-                 flex flex-col items-center gap-1 bg-gray-900 rounded-xl p-1.5
-                 border border-gray-800 shadow-lg shadow-black/30"
+      className="absolute left-3 top-1/2 -translate-y-1/2 z-10 flex flex-col items-center gap-1"
+      style={{
+        background: "color-mix(in oklch, var(--bg-1) 92%, transparent)",
+        backdropFilter: "blur(12px)",
+        borderRadius: 12,
+        padding: 6,
+        border: "1px solid var(--line-2)",
+        boxShadow: "0 20px 60px -20px rgba(0,0,0,0.6)",
+      }}
     >
       {/* ── Section A: Tool Modes ── */}
       <ToolButton icon={<SelectIcon />} tooltip="Select & move (V)" isActive={currentToolId === "select"} onClick={() => setTool("select")} />
@@ -288,25 +311,51 @@ export function VendorToolbar() {
       <ToolButton icon={<HandIcon />} tooltip="Pan canvas (H)" isActive={currentToolId === "hand"} onClick={() => setTool("hand")} />
 
       {currentToolId === "arrow" && (
-        <div className="absolute left-full ml-2 top-12 z-20 bg-gray-900 border border-gray-800 rounded-md px-2.5 py-1.5 text-[10px] text-gray-400 leading-relaxed whitespace-nowrap shadow-md shadow-black/20">
+        <div
+          className="absolute left-full ml-2 top-12 z-20 mono"
+          style={{
+            background: "var(--bg-1)",
+            border: "1px solid var(--line-2)",
+            borderRadius: 6,
+            padding: "6px 10px",
+            fontSize: 10,
+            color: "var(--text-3)",
+            lineHeight: 1.55,
+            whiteSpace: "nowrap",
+            boxShadow: "0 8px 24px -8px rgba(0,0,0,0.4)",
+          }}
+        >
           Click a shape edge to start · Double-click arrow to label it
         </div>
       )}
 
       {currentToolId === "text" && (
-        <div className="absolute left-full ml-2 top-24 z-20 bg-gray-900 border border-gray-800 rounded-md px-2.5 py-1.5 text-[10px] text-gray-400 leading-relaxed whitespace-nowrap shadow-md shadow-black/20">
+        <div
+          className="absolute left-full ml-2 top-24 z-20 mono"
+          style={{
+            background: "var(--bg-1)",
+            border: "1px solid var(--line-2)",
+            borderRadius: 6,
+            padding: "6px 10px",
+            fontSize: 10,
+            color: "var(--text-3)",
+            lineHeight: 1.55,
+            whiteSpace: "nowrap",
+            boxShadow: "0 8px 24px -8px rgba(0,0,0,0.4)",
+          }}
+        >
           Click anywhere on canvas to add text · These annotations are included in AI context
         </div>
       )}
 
-      <div className="w-7 h-px bg-gray-800 my-0.5" />
+      <div style={{ width: 24, height: 1, background: "var(--line-1)", margin: "2px 0" }} />
 
       {/* ── Section B: Basic Shapes ── */}
       {BASIC_SHAPES.map((config, i) => (
         <ToolButton key={`basic-${i}`} icon={config.icon} tooltip={config.tooltip} onClick={() => insertBasicShape(config)} />
       ))}
 
-      <div className="w-7 h-px bg-gray-800 my-0.5" />
+      <div style={{ width: 24, height: 1, background: "var(--line-1)", margin: "2px 0" }} />
 
       {/* ── Section B continued: Component Categories ── */}
       {TOOLBAR_CATEGORIES.map((category) => (
@@ -314,21 +363,46 @@ export function VendorToolbar() {
           <button
             title={category.name}
             aria-label={category.name}
-            className="w-9 h-9 rounded-lg bg-transparent text-gray-400
-                       hover:bg-gray-800 hover:text-white
-                       flex items-center justify-center cursor-pointer
-                       transition-colors duration-100 text-base"
+            className="flex items-center justify-center transition-colors duration-100"
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 8,
+              background: "transparent",
+              color: "var(--text-3)",
+              cursor: "pointer",
+              border: "1px solid transparent",
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-2)";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-1)";
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-3)";
+            }}
           >
             {category.icon}
           </button>
 
           {/* Submenu on hover */}
           <div
-            className="absolute left-full ml-1 top-0 hidden group-hover:flex
-                       flex-col gap-0.5 bg-gray-900 rounded-lg p-2
-                       border border-gray-800 min-w-[200px] shadow-lg shadow-black/30 z-30"
+            className="absolute left-full ml-1 top-0 hidden group-hover:flex flex-col z-30"
+            style={{
+              gap: 2,
+              background: "var(--bg-1)",
+              backdropFilter: "blur(12px)",
+              borderRadius: 10,
+              padding: 8,
+              border: "1px solid var(--line-2)",
+              minWidth: 220,
+              boxShadow: "0 20px 60px -20px rgba(0,0,0,0.6)",
+            }}
           >
-            <p className="text-[10px] text-gray-500 uppercase tracking-wider px-2 mb-1 font-medium">
+            <p
+              className="eyebrow"
+              style={{ padding: "0 8px", marginBottom: 4 }}
+            >
               {category.name}
             </p>
             {category.items.map((item) => (
@@ -336,9 +410,23 @@ export function VendorToolbar() {
                 key={item.id}
                 title={`${item.label} / ${item.vendor}`}
                 onClick={() => insertShape(item.type, item.vendor, item.label)}
-                className="flex items-center gap-2 px-2 py-1.5 rounded
-                           hover:bg-gray-700 text-sm text-gray-300 hover:text-white
-                           transition-colors duration-75 cursor-pointer"
+                className="flex items-center gap-2 transition-colors duration-75"
+                style={{
+                  padding: "8px 10px",
+                  borderRadius: 6,
+                  fontSize: 13,
+                  color: "var(--text-2)",
+                  cursor: "pointer",
+                  background: "transparent",
+                }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-2)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-1)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-2)";
+                }}
               >
                 <img
                   src={`/icons/vendors/${item.vendor}.svg`}
@@ -349,8 +437,15 @@ export function VendorToolbar() {
                   }}
                 />
                 <div className="flex flex-col text-left">
-                  <span className="font-medium text-white text-xs">{item.label}</span>
-                  <span className="text-[10px] text-gray-400">{item.vendor}</span>
+                  <span style={{ fontWeight: 500, color: "var(--text-1)", fontSize: 12.5 }}>
+                    {item.label}
+                  </span>
+                  <span
+                    className="mono"
+                    style={{ fontSize: 10, color: "var(--text-4)", letterSpacing: "0.04em" }}
+                  >
+                    {item.vendor}
+                  </span>
                 </div>
               </button>
             ))}
@@ -358,7 +453,7 @@ export function VendorToolbar() {
         </div>
       ))}
 
-      <div className="w-7 h-px bg-gray-800 my-0.5" />
+      <div style={{ width: 24, height: 1, background: "var(--line-1)", margin: "2px 0" }} />
 
       {/* ── Section C: Canvas Actions ── */}
       <ToolButton icon={<UndoIcon />} tooltip="Undo (Ctrl+Z)" onClick={handleUndo} />

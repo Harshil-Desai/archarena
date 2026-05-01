@@ -1,198 +1,153 @@
 import Link from "next/link";
-import { Check, X } from "lucide-react";
-import { UserMenu } from "@/components/auth/UserMenu";
+import { auth } from "@/auth";
+import { NavBar } from "@/components/ui/NavBar";
+import { Icon } from "@/components/ui/Icon";
 
-function Navbar() {
-  return (
-    <nav className="sticky top-0 z-50 flex items-center justify-between px-6 py-4 border-b border-gray-800/60 backdrop-blur-md bg-gray-950/80">
-      <Link
-        href="/"
-        className="font-[family-name:var(--font-display)] text-lg font-extrabold tracking-tight text-gray-100 hover:text-blue-400 transition-colors"
-      >
-        ArchArena
-      </Link>
-
-      <div className="flex items-center gap-6">
-        <Link
-          href="/pricing"
-          className="text-sm text-gray-300 transition-colors font-medium"
-        >
-          Pricing
-        </Link>
-        <Link
-          href="/#faq"
-          className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
-        >
-          FAQ
-        </Link>
-        <a
-          href="https://github.com/Harshil-Desai/archarena"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
-        >
-          GitHub
-        </a>
-        <UserMenu />
-      </div>
-    </nav>
-  );
-}
-
-// Data Structure
-type Feature = {
-  name: string;
-  included: boolean;
-};
-
-type Tier = {
-  name: string;
-  price: string;
-  description: string;
-  features: Feature[];
-  ctaText: string;
-  isPopular?: boolean;
-};
-
-const TIERS: Tier[] = [
+const PLANS = [
   {
+    id: "free",
     name: "Free",
     price: "$0",
-    description: "Enough to get on the board and feel the pressure.",
-    ctaText: "Start Free",
+    period: "",
+    sub: "Get started",
     features: [
-      { name: "5 Preset prompts", included: true },
-      { name: "5 interviewer hints per session", included: true },
-      { name: "1 interviewer mode", included: true },
-      { name: "0 Sessions saved", included: false },
-      { name: "Session export", included: false },
-      { name: "Written review", included: false },
-      { name: "Shareable session link", included: false },
-      { name: "Saved session history", included: false },
+      "5 system design prompts",
+      "3 AI hints per session",
+      "1 score per session",
+      "Community leaderboard",
+      "Session history",
     ],
+    locked: ["Full prompt library (15)", "Unlimited hints", "Voice mode", "Priority AI models", "Recruiter intros"],
+    cta: "Start free",
+    href: "/dashboard",
+    accent: false,
   },
   {
+    id: "pro",
     name: "Pro",
     price: "$12",
-    description: "For candidates who want repetition, history, and fewer caps.",
-    ctaText: "Upgrade to Pro",
-    isPopular: true,
+    period: "/mo",
+    sub: "Most popular",
     features: [
-      { name: "15 Preset prompts", included: true },
-      { name: "Unlimited interviewer hints", included: true },
-      { name: "3 interviewer modes", included: true },
-      { name: "10 Sessions saved", included: true },
-      { name: "Session export", included: true },
-      { name: "Written review", included: true },
-      { name: "Shareable session link", included: true },
-      { name: "Saved session history", included: true },
+      "Full prompt library (15 questions)",
+      "Unlimited AI hints",
+      "Unlimited scoring",
+      "Mentor / Grill mode",
+      "Rubric breakdown",
+      "Priority AI (Claude Sonnet)",
+      "Leaderboard ranking",
     ],
+    locked: ["Voice mode (beta)", "Recruiter intros"],
+    cta: "Upgrade to Pro",
+    href: "/billing?plan=pro",
+    accent: true,
   },
   {
+    id: "premium",
     name: "Premium",
     price: "$29",
-    description: "For custom drills, more range, and no storage ceiling.",
-    ctaText: "Upgrade to Premium",
+    period: "/mo",
+    sub: "For serious candidates",
     features: [
-      { name: "15 + custom preset prompts", included: true },
-      { name: "Unlimited interviewer hints", included: true },
-      { name: "3 + custom interviewer modes", included: true },
-      { name: "Unlimited sessions saved", included: true },
-      { name: "Session export", included: true },
-      { name: "Written review", included: true },
-      { name: "Shareable session link", included: true },
-      { name: "Saved session history", included: true },
+      "Everything in Pro",
+      "Voice interview mode",
+      "Priority queue hints",
+      "Recruiter intro program",
+      "Export to PDF",
+      "1-on-1 mock sessions",
     ],
+    locked: [],
+    cta: "Go Premium",
+    href: "/billing?plan=premium",
+    accent: false,
   },
 ];
 
-function PricingCard({ tier }: { tier: Tier }) {
+export default async function PricingPage() {
+  const session = await auth();
+  const tier = ((session?.user as { tier?: string } | undefined)?.tier ?? "FREE").toUpperCase();
+
   return (
-    <div
-      className={`relative flex flex-col p-8 rounded-2xl border bg-gray-900 ${
-        tier.isPopular
-          ? "border-blue-500/50 shadow-2xl shadow-blue-500/10 ring-1 ring-blue-500/50"
-          : "border-gray-800"
-      }`}
-    >
-      {tier.isPopular && (
-        <div className="absolute -top-4 left-0 right-0 mx-auto w-fit px-3 py-1 bg-gradient-to-r from-blue-600 to-emerald-500 text-white text-[11px] font-bold tracking-widest uppercase rounded-full shadow-lg">
-          Most Popular
+    <div style={{ minHeight: "100vh" }}>
+      {session ? (
+        <NavBar tier={tier} userName={session.user?.name?.[0] ?? "H"} />
+      ) : (
+        <div style={{
+          position: "sticky", top: 0, zIndex: 40,
+          backdropFilter: "blur(18px)",
+          background: "color-mix(in oklch, var(--bg-0) 70%, transparent)",
+          borderBottom: "1px solid var(--line-1)",
+        }}>
+          <div className="row between" style={{ maxWidth: 1280, margin: "0 auto", padding: "14px 28px" }}>
+            <Link href="/"><span className="serif" style={{ fontSize: 18 }}>Arch<em style={{ color: "var(--accent)" }}>Arena</em></span></Link>
+            <div className="row gap-2">
+              <Link href="/login" className="btn btn-ghost">Sign in</Link>
+              <Link href="/dashboard" className="btn btn-primary">Get started <Icon name="arrow-right" size={14} /></Link>
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="mb-8">
-        <h3 className="text-xl font-bold text-gray-50 font-[family-name:var(--font-display)]">
-          {tier.name}
-        </h3>
-        <p className="mt-2 text-sm text-gray-400">{tier.description}</p>
-        <div className="mt-6 flex items-baseline gap-1">
-          <span className="text-4xl font-extrabold text-white tracking-tight">
-            {tier.price}
-          </span>
-          <span className="text-sm text-gray-500 font-medium">/mo</span>
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "80px 28px 120px" }}>
+        <div className="col center" style={{ marginBottom: 64, textAlign: "center" }}>
+          <span className="eyebrow" style={{ marginBottom: 16 }}>Pricing</span>
+          <h1 className="serif" style={{ fontSize: 56, margin: 0, letterSpacing: "-0.02em", fontWeight: 400, lineHeight: 1.05 }}>
+            Invest in the <em>offer.</em>
+          </h1>
+          <p style={{ fontSize: 17, color: "var(--text-3)", maxWidth: 520, marginTop: 20, lineHeight: 1.55 }}>
+            One onsite loop costs $300+ in prep time. We charge $12.
+            Cancel whenever — your history stays.
+          </p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          {PLANS.map(plan => (
+            <div key={plan.id} className={plan.accent ? "card edge-glow" : "card"} style={{ padding: "32px 28px", position: "relative" }}>
+              {plan.accent && <div className="ambient" style={{ opacity: 0.5 }} />}
+              <div style={{ position: "relative" }}>
+                <div className="row between" style={{ marginBottom: 20 }}>
+                  <div>
+                    <div className="eyebrow">{plan.name}</div>
+                    <div className="mono" style={{ fontSize: 10.5, color: "var(--text-4)", marginTop: 4 }}>{plan.sub}</div>
+                  </div>
+                  {plan.accent && <span className="chip chip-accent">Popular</span>}
+                </div>
+
+                <div className="row gap-1" style={{ alignItems: "baseline", marginBottom: 28 }}>
+                  <span className="mono" style={{ fontSize: 48, color: "var(--text-1)", letterSpacing: "-0.02em" }}>{plan.price}</span>
+                  <span className="mono" style={{ fontSize: 16, color: "var(--text-4)" }}>{plan.period}</span>
+                </div>
+
+                <Link href={plan.href} className={`btn ${plan.accent ? "btn-primary" : "btn-ghost"}`}
+                  style={{ width: "100%", marginBottom: 28, display: "flex", padding: "12px 16px" }}>
+                  {plan.cta} <Icon name="arrow-right" size={14} />
+                </Link>
+
+                <div className="col gap-3">
+                  {plan.features.map(f => (
+                    <div key={f} className="row gap-2" style={{ fontSize: 13, color: "var(--text-2)" }}>
+                      <Icon name="check" size={14} style={{ color: "var(--win)", flexShrink: 0 }} />
+                      {f}
+                    </div>
+                  ))}
+                  {plan.locked.map(f => (
+                    <div key={f} className="row gap-2" style={{ fontSize: 13, color: "var(--text-5)" }}>
+                      <Icon name="lock" size={14} style={{ flexShrink: 0 }} />
+                      {f}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="col center" style={{ marginTop: 64, textAlign: "center" }}>
+          <p className="mono" style={{ fontSize: 12, color: "var(--text-4)" }}>
+            All plans include SOC2-compliant data handling · Cancel anytime · Questions? hello@archarena.dev
+          </p>
         </div>
       </div>
-
-      <ul className="flex-1 space-y-4 mb-8">
-        {tier.features.map((feature, i) => (
-          <li key={i} className="flex items-start gap-3">
-            {feature.included ? (
-              <Check className="h-5 w-5 text-emerald-400 shrink-0" />
-            ) : (
-              <X className="h-5 w-5 text-gray-600 shrink-0" />
-            )}
-            <span
-              className={`text-sm ${
-                feature.included ? "text-gray-300" : "text-gray-600"
-              }`}
-            >
-              {feature.name}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <button
-        type="button"
-        className={`w-full py-3.5 px-6 rounded-lg text-sm font-bold transition-all font-[family-name:var(--font-display)] ${
-          tier.isPopular
-            ? "bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/20 hover:-translate-y-0.5 active:translate-y-0"
-            : "bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700/50"
-        }`}
-      >
-        {tier.ctaText}
-      </button>
     </div>
-  );
-}
-
-export default function PricingPage() {
-  return (
-    <>
-      <Navbar />
-
-      <main className="flex-1 w-full relative overflow-hidden bg-gray-950 flex flex-col items-center">
-        {/* Background glow for the page */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-[800px] h-[400px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
-
-        <div className="w-full max-w-7xl mx-auto px-6 py-20 lg:py-28 relative z-10 flex flex-col items-center">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h1 className="font-[family-name:var(--font-display)] text-4xl lg:text-5xl font-extrabold tracking-tight text-white mb-4">
-              Pick the interview cadence.
-            </h1>
-            <p className="text-lg text-gray-400">
-              Free gets you on the board. Paid plans remove the caps and keep the trail.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
-            {TIERS.map((tier) => (
-              <PricingCard key={tier.name} tier={tier} />
-            ))}
-          </div>
-        </div>
-      </main>
-    </>
   );
 }
